@@ -11,7 +11,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const BACKUP_DIR = process.env.BACKUP_DIR || path.join(DATA_DIR, 'backups');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const SETUP_TOKEN = process.env.SETUP_TOKEN || '';
-const COLLS = ['ivs', 'abs', 'types', 'contrats', 'chantiers', 'emps', 'contracts', 'params', 'log', 'weeks'];
+const COLLS = ['ivs', 'abs', 'types', 'contrats', 'chantiers', 'emps', 'contracts', 'params', 'log', 'weeks', 'adj'];
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(BACKUP_DIR, { recursive: true });
@@ -77,6 +77,7 @@ function visibleFilter(u) {
       case 'ivs': case 'abs': return team.has(o.emp);
       case 'emps': return team.has(o.id);
       case 'contracts': return o.id === u.emp;
+      case 'adj': return o.emp === u.emp;
       case 'types': return o.emp === u.emp;
       case 'params': case 'weeks': return true;
       case 'chantiers': return u.role === 'chef' && (o.slots || []).some(s => team.has(s.emp));

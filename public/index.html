@@ -222,6 +222,7 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
 }
 
 .stick1 td:first-child,.stick1 th:first-child{position:sticky;left:0;background:#fff;z-index:1}
+.cpt th{white-space:nowrap}.cpt tr.totrow td{background:#fafcfb;border-top:2px solid var(--line)}
 .demo-note{background:#fff8e1;border:1px solid #f1df9c;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:16px}
 </style>
 </head>
@@ -397,6 +398,52 @@ function typeModal(id,emp){const t=id?S.types.find(x=>x.id===id):null;
   const o={emp:f.emp,site:f.site,days,s:f.s,e:f.e,wk:f.wk};if(t)Object.assign(t,o);else S.types.push(Object.assign({id:uid('t')},o));
   regenFuture();logA('Affectation '+(t?'modifiée':'ajoutée')+' '+fullName(f.emp)+' '+f.site);toast('Planning mis à jour à partir d\'aujourd\'hui');});}
 
+/* ====== Compteur d'heures mensuel ====== */
+const ABS_ASSIM=['CP','JF','CPD','AM','AT'];
+function monthStats(emp,m){
+ const end=monthEnd(m),go=(S.params.goLive||'2000-01-01'),from=m>go?m:go,to=end<TODAY?end:TODAY;
+ if(from>to)return null;
+ const dim=daysIn(m,end).length,days=daysIn(from,to);
+ let prevu=0,eff=0,assim=0,nj=0,rec=0,paid=0,miss=0,pend=0;
+ days.forEach(d=>{const ab=absOf(emp,d);const ivs=S.ivs.filter(i=>i.emp===emp&&i.date===d);const pl=ivs.reduce((t,i)=>t+plannedMin(i),0);
+  if(ab){if(ABS_ASSIM.includes(ab))assim+=pl;else if(ab==='NJ')nj+=pl;else if(ab==='REC')rec+=pl;return;}
+  ivs.forEach(i=>{prevu+=plannedMin(i);eff+=counted(i);const st=dispStatus(i);if(st==='manquant')miss++;if(st==='ecart'||st==='validee_chef')pend++;if(i.status==='validee'&&i.decision==='payee')paid+=extraMin(i);});});
+ const span=daysIn(from,end);let plFull=0,plDone=0;S.ivs.forEach(i=>{if(i.emp!==emp||i.date<from||i.date>end)return;const p=plannedMin(i);plFull+=p;if(i.date<=to)plDone+=p;});
+ const frac=to>=end?1:(plFull?plDone/plFull:days.length/span.length);
+ const base=Math.round(mensuel(emp)*60*span.length/dim*frac);
+ const sousPlan=Math.min(0,prevu+assim+nj+rec-base);
+ const adj=(S.adj||[]).filter(a=>a.emp===emp&&a.month===m).reduce((t,a)=>t+(+a.min||0),0);
+ const solde=eff+assim-base-paid-sousPlan+adj;
+ return {base,prevu,eff,assim,nj,rec,paid,miss,pend,sousPlan,adj,solde,partial:days.length<dim};
+}
+function cumulTo(emp,m){let t=0;const go=monthStart(S.params.goLive||TODAY);for(let x=go;x<=m;x=addMonths(x,1)){const st=monthStats(emp,x);if(st)t+=st.solde;}return t;}
+function soldePill(v){if(Math.abs(v)<1)return '<span class="pill st-validee">À jour</span>';return v>0?'<span class="pill st-en_cours">On lui doit '+fmtD(v)+'</span>':'<span class="pill st-ecart">Il doit '+fmtD(-v)+'</span>';}
+function compteurView(){
+ if(!S.cmonth)S.cmonth=monthStart(TODAY);
+ const m=S.cmonth,d0=parseYmd(m);ensureRange(m,monthEnd(m));
+ const label=MOIS[d0.getMonth()].charAt(0).toUpperCase()+MOIS[d0.getMonth()].slice(1)+' '+d0.getFullYear();
+ const rows=EMPS.map(e=>({e,st:monthStats(e.id,m),cum:cumulTo(e.id,m)})).filter(r=>r.st);
+ const T=k=>rows.reduce((t,r)=>t+r.st[k],0);
+ let h='<div class="card toolbar"><div class="tb-row"><div class="tb-nav"><button class="nav-btn" data-cmonth="-1" aria-label="Mois précédent">◀</button><b class="tb-label">'+label+(m===monthStart(TODAY)?' · à date':'')+'</b><button class="nav-btn" data-cmonth="1" aria-label="Mois suivant">▶</button><button data-cmonth="0">Ce mois</button></div><div class="tb-filters"><button data-csvcpt>Télécharger (CSV)</button></div></div></div>';
+ if(!rows.length)return h+'<div class="card muted">Aucune donnée pour ce mois (le suivi commence le '+dlabel(S.params.goLive)+').</div>';
+ const miss=T('miss'),pend=T('pend');
+ if(miss||pend)h+='<div class="alert warn"><div><div class="t">'+(miss?miss+' intervention(s) non pointée(s)':'')+(miss&&pend?' · ':'')+(pend?pend+' écart(s) à arbitrer':'')+'</div><div class="d">Tant qu\'elles ne sont pas régularisées, le solde est provisoire : une intervention non pointée compte 0 h effectuée.</div></div></div>';
+ h+='<div class="card scroll" style="padding:0"><table class="stick1 cpt"><thead><tr><th>Salarié</th><th class="num">Contrat</th><th class="num">Prévu</th><th class="num">Effectué</th><th class="num">Effectué − prévu</th><th class="num">Absences justifiées</th><th class="num">Récup. prise</th><th class="num">Absence NJ</th><th class="num">Supp./compl. payées</th><th class="num">Sous-planification</th><th class="num">Régul.</th><th class="num">Solde du mois</th><th class="num">Solde cumulé</th><th></th></tr></thead><tbody>';
+ rows.forEach(({e,st,cum})=>{const de=st.eff-st.prevu;
+  h+='<tr><td><b>'+esc(e.prenom+' '+e.nom)+'</b>'+(st.miss?'<div class="small" style="color:var(--bad)">'+st.miss+' non pointée(s)</div>':'')+'</td><td class="num">'+fmtD(st.base)+'</td><td class="num">'+fmtD(st.prevu)+'</td><td class="num"><b>'+fmtD(st.eff)+'</b></td><td class="num '+(de<0?'over':'')+'">'+(de>0?'+':'')+fmtD(de)+'</td><td class="num">'+(st.assim?fmtD(st.assim):'')+'</td><td class="num">'+(st.rec?fmtD(st.rec):'')+'</td><td class="num">'+(st.nj?'<span class="over">'+fmtD(st.nj)+'</span>':'')+'</td><td class="num">'+(st.paid?fmtD(st.paid):'')+'</td><td class="num">'+(st.sousPlan?'<span class="muted" title="Heures du contrat que le planning n\'a pas fournies : non dues par le salarié">'+fmtD(-st.sousPlan)+'</span>':'')+'</td><td class="num">'+(st.adj?(st.adj>0?'+':'')+fmtD(st.adj):'')+'</td><td class="num"><b>'+(st.solde>0?'+':'')+fmtD(st.solde)+'</b></td><td class="num"><b>'+(cum>0?'+':'')+fmtD(cum)+'</b><div>'+soldePill(cum)+'</div></td><td>'+(isManager()?'<button class="sm" data-adj="'+e.id+'">Régulariser</button>':'')+'</td></tr>';});
+ h+='<tr class="totrow"><td><b>Total</b></td><td class="num">'+fmtD(T('base'))+'</td><td class="num">'+fmtD(T('prevu'))+'</td><td class="num"><b>'+fmtD(T('eff'))+'</b></td><td class="num">'+fmtD(T('eff')-T('prevu'))+'</td><td class="num">'+fmtD(T('assim'))+'</td><td class="num">'+fmtD(T('rec'))+'</td><td class="num">'+fmtD(T('nj'))+'</td><td class="num">'+fmtD(T('paid'))+'</td><td class="num">'+fmtD(-T('sousPlan'))+'</td><td class="num">'+fmtD(T('adj'))+'</td><td class="num"><b>'+fmtD(T('solde'))+'</b></td><td class="num"><b>'+fmtD(rows.reduce((t,r)=>t+r.cum,0))+'</b></td><td></td></tr>';
+ h+='</tbody></table></div>';
+ h+='<div class="card small"><b>Comment se lit le solde</b><br>Solde du mois = effectué + absences justifiées (CP, maladie, accident du travail, jour férié, congé familial) − contrat du mois − heures en plus déjà payées + sous-planification + régularisations.<br>• <b>Positif</b> : le salarié a fait plus que son contrat sans être payé en plus → <b>on lui doit des heures</b> (à payer ou à récupérer).<br>• <b>Négatif</b> : il a fait moins que son contrat alors que le planning le prévoyait (retards, départs anticipés, absences non justifiées, récupérations prises) → <b>il doit des heures</b>.<br>• <b>Sous-planification</b> : si le planning prévoit moins que le contrat, la différence n\'est pas due par le salarié ; elle est neutralisée et affichée à part pour que tu corriges le planning.<br>Le contrat du mois = forfait mensuel (moyenne hebdo × 52 / 12). Pour le mois en cours, il est réparti selon le planning : « à date », on compare aux heures de contrat correspondant aux jours déjà passés. Le solde cumulé part de la mise en service ('+dlabel(S.params.goLive)+'). Utilise « Régulariser » quand des heures sont payées sur la paie ou remises à zéro.</div>';
+ const lst=(S.adj||[]).filter(a=>a.month===m);
+ if(lst.length)h+='<div class="card"><h2>Régularisations du mois</h2><table>'+lst.map(a=>'<tr><td>'+esc(fullName(a.emp))+'</td><td class="num">'+(a.min>0?'+':'')+fmtD(a.min)+'</td><td>'+esc(a.motif||'')+'</td><td class="small muted">'+esc(a.by||'')+'</td><td>'+(isManager()?'<button class="sm" data-deladj="'+a.id+'">Supprimer</button>':'')+'</td></tr>').join('')+'</table></div>';
+ window.__csvcpt=['Salarié;Contrat;Prévu;Effectué;Absences justifiées;Récup prise;Absence NJ;Supp/compl payées;Sous-planification;Régularisation;Solde du mois;Solde cumulé'].concat(rows.map(({e,st,cum})=>[e.nom+' '+e.prenom,dec(st.base),dec(st.prevu),dec(st.eff),dec(st.assim),dec(st.rec),dec(st.nj),dec(st.paid),dec(-st.sousPlan),dec(st.adj),dec(st.solde),dec(cum)].join(';'))).join('\n');
+ return h;
+}
+function adjModal(emp){const m=S.cmonth;const cum=cumulTo(emp,m);
+ modal('<h3>Régulariser — '+esc(fullName(emp))+'</h3><div class="muted small">Solde cumulé actuel : <b>'+(cum>0?'+':'')+fmtD(cum)+'</b> ('+(cum>0?'on lui doit':'il doit')+')</div><label>Action</label><select name="kind"><option value="zero">Solder le compteur (remise à zéro)</option><option value="minus">Heures payées ou récupérées (diminue ce qu\'on lui doit)</option><option value="plus">Ajouter des heures en sa faveur</option></select><label>Nombre d\'heures (ignoré pour la remise à zéro)</label><input type="number" name="h" step="0.25" min="0" value="0"><label>Motif</label><input name="motif" required placeholder="ex. payées sur la paie de novembre"><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">Enregistrer</button></div>',
+ f=>{let v=Math.round((+f.h||0)*60);if(f.kind==='zero')v=-cum;else if(f.kind==='minus')v=-v;if(!v){toast('Rien à régulariser');return false;}
+  (S.adj=S.adj||[]).push({id:uid('j'),emp,month:m,min:v,motif:f.motif,by:USER?USER.name:''});logA('Régularisation '+fullName(emp)+' '+(v>0?'+':'')+fmtD(v)+' : '+f.motif);toast('Régularisation enregistrée');});}
+
 /* ====== Rôles ====== */
 function canValidateChef(iv){return S.role==='chef'&&EMP[iv.emp].chef===S.who&&iv.emp!==S.who;}
 const isManager=()=>S.role==='admin'||S.role==='gest';
@@ -497,11 +544,11 @@ function render(){
 /* --- Vue gestion --- */
 function managerView(){
  const al=alerts();const pend=S.ivs.filter(i=>['ecart','validee_chef'].includes(i.status)).length;
- const tabs=[['dash','Tableau de bord',al.filter(a=>a.lvl==='bad').length],['planning','Planning'],['valid','Validation',pend],['pointage','Pointage'],['chantiers','Chantiers'],['types','Plannings types'],['contrats','Salariés & forfaits'],['export','Clôture & exports'],['journal','Journal']];
+ const tabs=[['dash','Tableau de bord',al.filter(a=>a.lvl==='bad').length],['planning','Planning'],['valid','Validation',pend],['pointage','Pointage'],['compteur','Compteur d\'heures'],['chantiers','Chantiers'],['types','Plannings types'],['contrats','Salariés & forfaits'],['export','Clôture & exports'],['journal','Journal']];
  if(S.role==='admin')tabs.push(['params','Paramètres']);
  if(!tabs.find(t=>t[0]===S.tab))S.tab='dash';
  let h='<nav class="tabs">'+tabs.map(t=>'<button data-tab="'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'">'+t[1]+(t[2]?'<span class="badge">'+t[2]+'</span>':'')+'</button>').join('')+'</nav><main>';
- h+=({dash:dashView,planning:planningView,valid:validView,pointage:pointageView,chantiers:chantiersView,types:typesView,contrats:contratsView,export:exportView,journal:journalView,params:paramsView})[S.tab](al);
+ h+=({dash:dashView,planning:planningView,valid:validView,pointage:pointageView,compteur:compteurView,chantiers:chantiersView,types:typesView,contrats:contratsView,export:exportView,journal:journalView,params:paramsView})[S.tab](al);
  return h+'</main>';
 }
 function weekNav(){const end=addDays(S.week,6);return '<div class="row" style="margin-bottom:12px"><button data-wk="-7">◀</button><b>Semaine '+weekAB(S.week)+' · du '+dlabel(S.week)+' au '+dlabel(end)+'</b><button data-wk="7">▶</button>'+(S.week!==W0?'<button data-wk="0">Cette semaine</button>':'')+'</div>';}
@@ -740,6 +787,7 @@ function phoneView(){
  if(S.ptab==='month'){
   const w=mondayOf(S.day);ensureWeek(w);const x=wk(me,w);const rb=recupBalance(me);
   h+='<div class="iv"><div class="small muted">Semaine du '+dlabel(w)+'</div><div class="big">'+fmtD(x.total)+'</div><div class="muted">réalisées et validées · contrat '+fmtD(x.contract)+'</div>'+(x.pend?'<div class="small" style="margin-top:6px;color:var(--warn)">+'+fmtD(x.pend)+' en attente de validation</div>':'')+'</div>';
+  {const cm=monthStart(TODAY),stm=monthStats(me,cm),cu=cumulTo(me,cm);h+='<div class="iv"><div class="small muted">Mon compteur d\'heures (depuis le '+dlabel(S.params.goLive)+')</div><div class="big">'+(Math.abs(cu)<1?'À jour':(cu>0?'+':'−')+fmtD(Math.abs(cu)))+'</div><div class="muted small">'+(Math.abs(cu)<1?'Tu as fait tes heures de contrat.':cu>0?'L\'entreprise te doit ces heures (payées ou récupérées).':'Il te manque ces heures par rapport à ton contrat.')+(stm?'<br>Ce mois-ci : effectué '+fmtD(stm.eff)+' pour '+fmtD(stm.base)+' de contrat à date.':'')+'</div></div>';}
   h+='<div class="iv"><div class="small muted">Compteur de récupération</div><div class="big">'+fmtD(rb.bal)+'</div><div class="muted small">acquis '+fmtD(rb.acq)+' · pris '+fmtD(rb.taken)+'</div></div>';
  }
  return h+'</div>';
@@ -748,7 +796,7 @@ function ensureWeek(d){const w=mondayOf(d);if(!S.genWeeks.includes(w)){genWeek(w
 
 /* ====== Événements ====== */
 document.addEventListener('click',ev=>{
- const t=ev.target.closest('[data-tab],[data-wk],[data-editiv],[data-addiv],[data-absadd],[data-delabs],[data-decide],[data-act],[data-ecart],[data-ptab],[data-day],[data-copycsv],[data-close-month],[data-pmode],[data-pday],[data-orient],[data-detail],[data-pnav],[data-pvreset],[data-gocell],[data-editct],[data-addcontrat],[data-editcontrat],[data-addponct],[data-addslot],[data-addtype],[data-edittype],#resetBtn,#logoutBtn,#pwdBtn,[data-empedit],[data-code],[data-gest],[data-csvdl]');
+ const t=ev.target.closest('[data-tab],[data-wk],[data-editiv],[data-addiv],[data-absadd],[data-delabs],[data-decide],[data-act],[data-ecart],[data-ptab],[data-day],[data-copycsv],[data-close-month],[data-pmode],[data-pday],[data-cmonth],[data-adj],[data-deladj],[data-csvcpt],[data-orient],[data-detail],[data-pnav],[data-pvreset],[data-gocell],[data-editct],[data-addcontrat],[data-editcontrat],[data-addponct],[data-addslot],[data-addtype],[data-edittype],#resetBtn,#logoutBtn,#pwdBtn,[data-empedit],[data-code],[data-gest],[data-csvdl]');
  if(!t||t.closest('.modal-bg'))return;
  if(t.id==='logoutBtn'){api('/api/logout',{}).finally(()=>location.reload());return;}
  if(t.id==='pwdBtn'){pwdModal();return;}
@@ -764,6 +812,10 @@ document.addEventListener('click',ev=>{
  if(t.dataset.addslot){slotModal(t.dataset.addslot);return;}
  if(t.dataset.addtype!==undefined){typeModal(null,t.dataset.addtype);return;}
  if(t.dataset.edittype){typeModal(t.dataset.edittype);return;}
+ if(t.dataset.cmonth!==undefined){const n=+t.dataset.cmonth;S.cmonth=n===0?monthStart(TODAY):addMonths(S.cmonth||monthStart(TODAY),n);save();render();return;}
+ if(t.dataset.adj){adjModal(t.dataset.adj);return;}
+ if(t.dataset.deladj){S.adj=(S.adj||[]).filter(a=>a.id!==t.dataset.deladj);logA('Régularisation supprimée');save();render();return;}
+ if(t.dataset.csvcpt!==undefined){const b=new Blob(['\ufeff'+window.__csvcpt],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='socanet-compteur-heures-'+S.cmonth.slice(0,7)+'.csv';document.body.appendChild(a);a.click();a.remove();return;}
  if(t.dataset.detail){pvState().detail=t.dataset.detail;save();render();return;}
  if(t.dataset.orient){pvState().orient=t.dataset.orient;save();render();return;}
  if(t.dataset.pday!==undefined){const n=+t.dataset.pday;S.pday=n===0?TODAY:addDays(S.pday||TODAY,n);const w=mondayOf(S.pday);if(!S.genWeeks.includes(w))genWeek(w);save();render();return;}
@@ -790,7 +842,7 @@ document.addEventListener('submit',ev=>{if(ev.target.id==='paramsForm'){ev.preve
 
 /* ====== Serveur : synchronisation, comptes ====== */
 let USER=null,VERSION=0,SNAP={},syncing=false,pendingSync=false,rerenderPending=false,USERS=null,SYNC_STATE='ok';
-const COLLS=['ivs','abs','types','contrats','chantiers','emps','contracts','params','log','weeks'];
+const COLLS=['ivs','abs','types','contrats','chantiers','emps','contracts','params','log','weeks','adj'];
 const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const isMgrUser=()=>USER&&(USER.role==='admin'||USER.role==='gest');
 const PARAMS_DEF={tol:15,plafond:'1/10',nuitDebut:'21:00',nuitFin:'06:00',semA:'impaire',goLive:'2000-01-01'};
@@ -803,7 +855,7 @@ function applyDelta(r){
  else COLLS.forEach(c=>{const ups=r.up[c]||[],dels=r.del[c]||[];if(!ups.length&&!dels.length)return;const m=new Map(docsOf(c).map(d=>[d.id,d]));SNAP[c]=SNAP[c]||{};ups.forEach(d=>{m.set(d.id,d);SNAP[c][d.id]=JSON.stringify(d);});dels.forEach(id=>{m.delete(id);delete SNAP[c][id];});setColl(c,[...m.values()]);});
  VERSION=r.version;refreshEmps();
 }
-const UIKEYS=['tab','week','pday','ptab','pv','pmonth','tyEmp','role','who'];
+const UIKEYS=['tab','week','pday','cmonth','ptab','pv','pmonth','tyEmp','role','who'];
 function saveUi(){try{localStorage.setItem('socanet-ui-'+USER.login,JSON.stringify(Object.fromEntries(UIKEYS.map(k=>[k,S[k]]))));}catch(e){}}
 let syncTimer=null;
 function save(){if(!USER)return;saveUi();clearTimeout(syncTimer);syncTimer=setTimeout(doSync,300);}
@@ -853,7 +905,7 @@ async function boot(){
  if(me.setup)return setupView();
  if(!me.user)return loginView();
  USER=me.user;
- S={ivs:[],abs:[],types:[],contrats:[],chantiers:[],emps:[],contracts:{},params:Object.assign({},PARAMS_DEF),log:[],genWeeks:[],tab:'dash',week:W0,ptab:'today'};
+ S={adj:[],ivs:[],abs:[],types:[],contrats:[],chantiers:[],emps:[],contracts:{},params:Object.assign({},PARAMS_DEF),log:[],genWeeks:[],tab:'dash',week:W0,ptab:'today'};
  let ui={};try{ui=JSON.parse(localStorage.getItem('socanet-ui-'+USER.login)||'{}');}catch(e){}
  UIKEYS.forEach(k=>{if(ui[k]!==undefined)S[k]=ui[k];});
  S.day=TODAY;if(!S.week||S.week<addDays(W0,-56))S.week=W0;
