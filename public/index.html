@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Socanet · Planning & pointage</title>
 <meta name="theme-color" content="#1679b8">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -153,6 +153,75 @@ textarea{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;bord
 .login form{text-align:left}.login label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}.login input{width:100%;font-size:17px;padding:11px}
 .login button{width:100%;margin-top:18px;padding:13px;font-size:17px;font-weight:600}
 #loginErr{margin-top:10px;color:var(--bad);text-align:center}
+
+.toolbar{padding:12px 14px}
+.tb-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.tb-row+.tb-row{margin-top:10px}
+.tb-nav{display:flex;align-items:center;gap:6px}
+.tb-label{min-width:200px;text-align:center}
+.tb-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.daylist{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:16px}
+.dcard{margin:0}
+.dchips{margin-top:8px}
+.dchips .chip{font-size:13px;padding:6px 8px}
+nav.tabs{-webkit-overflow-scrolling:touch}
+body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+@media (pointer:coarse){button,select,input{min-height:42px}button.sm{min-height:34px;padding:6px 10px}.chip{padding:6px 8px}.add{padding:6px;font-size:13px}.cg{padding:7px 0}}
+@media (max-width:1100px){
+ .grid4{grid-template-columns:repeat(2,1fr)}
+ main{padding:14px}
+}
+@media (max-width:900px){
+ header{padding:8px 12px;gap:8px;position:static;padding-top:calc(8px + env(safe-area-inset-top))}
+ header .logo img{height:44px}
+ header .logo span{display:none}
+ header select{max-width:46vw;font-size:14px}
+ header button{padding:6px 10px;font-size:13px}
+ nav.tabs{flex-wrap:nowrap;overflow-x:auto;padding:4px 8px 0;position:sticky;top:0;z-index:6;scrollbar-width:none}
+ nav.tabs::-webkit-scrollbar{display:none}
+ nav.tabs button{white-space:nowrap;flex:0 0 auto;padding:10px 10px}
+ main{padding:10px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+ .card{padding:12px;border-radius:12px}
+ .kpi .n{font-size:22px}
+ input,select,textarea{font-size:16px}
+ .tb-label{min-width:0;flex:1;font-size:14px}
+ .tb-nav{width:100%}
+ .tb-filters{width:100%}
+ .tb-filters select{flex:1 1 140px;min-width:0}
+ .seg{display:flex;width:100%}
+ .seg button{flex:1;padding:8px 4px;font-size:13px}
+ .alert{flex-wrap:wrap}
+ .alert>div:first-child{flex:1 1 220px}
+ table{font-size:13px}
+ th,td{padding:6px}
+ .plan td{min-width:104px}.plan td.name{min-width:108px;max-width:120px}
+ .cgrid td.name,.cgrid th.name{min-width:110px;max-width:120px}
+ .cal td{height:auto;min-height:70px;width:auto;padding:3px}
+ .cal .chip{font-size:11px;padding:3px 4px}
+ .modal-bg{align-items:flex-end;padding:0}
+ .modal{max-width:100%;border-radius:18px 18px 0 0;max-height:92vh;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+ .modal .acts{position:sticky;bottom:-18px;background:#fff;padding-top:10px}
+ .modal .acts button{flex:1 1 auto;min-height:46px}
+ .toast{bottom:calc(18px + env(safe-area-inset-bottom));max-width:90vw;text-align:center}
+}
+@media (max-width:600px){
+ .grid4{grid-template-columns:repeat(2,1fr);gap:8px}
+ .kpi{padding:10px}.kpi .l{font-size:11.5px}
+ .daylist{grid-template-columns:1fr}
+ .hide-phone{display:none!important}
+ header .sync{display:none}
+ .phone{max-width:none;border:none;box-shadow:none;border-radius:0;padding:6px 2px;background:transparent}
+ .phone .iv{background:#fff}
+ .phone .ptabs{position:sticky;top:0;background:var(--bg);z-index:4;padding:6px 0;margin:6px 0}
+ .phone .ptabs button{font-size:13.5px;padding:10px 2px}
+ .row{gap:6px}
+ .login{margin:16px 12px;padding:20px}
+}
+@media (min-width:601px) and (max-width:1100px){
+ .phone{max-width:560px}
+}
+
+.stick1 td:first-child,.stick1 th:first-child{position:sticky;left:0;background:#fff;z-index:1}
 .demo-note{background:#fff8e1;border:1px solid #f1df9c;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:16px}
 </style>
 </head>
@@ -451,8 +520,8 @@ function dashView(al){
 const monthStart=s=>s.slice(0,8)+'01';
 const addMonths=(s,n)=>{const d=parseYmd(monthStart(s));d.setMonth(d.getMonth()+n);return ymd(d);};
 const monthEnd=s=>addDays(addMonths(s,1),-1);
-function pvState(){if(!S.pv)S.pv={mode:'week',emp:'all',team:'all',site:'all'};if(!S.pv.orient)S.pv.orient='rows';if(!S.pv.detail)S.pv.detail='full';if(!S.pmonth)S.pmonth=monthStart(TODAY);return S.pv;}
-function pvPeriod(){const pv=pvState();if(pv.mode==='week')return [S.week,addDays(S.week,6)];if(pv.mode==='month')return [S.pmonth,monthEnd(S.pmonth)];return [S.pmonth,monthEnd(addMonths(S.pmonth,2))];}
+function pvState(){if(!S.pv)S.pv={mode:(window.innerWidth<760?'day':'week'),emp:'all',team:'all',site:'all'};if(!S.pday||S.pday<addDays(TODAY,-60))S.pday=TODAY;if(!S.pv.orient)S.pv.orient='rows';if(!S.pv.detail)S.pv.detail='full';if(!S.pmonth)S.pmonth=monthStart(TODAY);return S.pv;}
+function pvPeriod(){const pv=pvState();if(pv.mode==='day')return [S.pday||TODAY,S.pday||TODAY];if(pv.mode==='week')return [S.week,addDays(S.week,6)];if(pv.mode==='month')return [S.pmonth,monthEnd(S.pmonth)];return [S.pmonth,monthEnd(addMonths(S.pmonth,2))];}
 function pvEmps(){const pv=pvState();return EMPS.filter(e=>(pv.emp==='all'||e.id===pv.emp)&&(pv.team==='all'||e.chef===pv.team||e.id===pv.team));}
 const pvSiteOk=i=>{const pv=pvState();return pv.site==='all'||i.site===pv.site;};
 function daysIn(a,b){const out=[];for(let d=a;d<=b;d=addDays(d,1))out.push(d);return out;}
@@ -462,18 +531,33 @@ function dayIvs(emp,d){return S.ivs.filter(i=>i.emp===emp&&i.date===d&&pvSiteOk(
 function periodTotals(emp,days){let pl=0,real=0;days.forEach(d=>{if(absOf(emp,d))return;S.ivs.filter(i=>i.emp===emp&&i.date===d&&pvSiteOk(i)).forEach(i=>{pl+=plannedMin(i);real+=counted(i);});});return {pl,real,contract:Math.round(days.reduce((a,d)=>a+hebdoW(emp,mondayOf(d))*60/7,0))};}
 function pvToolbar(){
  const pv=pvState();const [a,b]=pvPeriod();
- const modes=[['week','Semaine'],['month','Mois'],['quarter','3 mois']];
+ const modes=[['day','Jour'],['week','Semaine'],['month','Mois'],['quarter','3 mois']];
  let label;
- if(pv.mode==='week')label='Semaine '+weekAB(a)+' · du '+dlabel(a)+' au '+dlabel(b);
+ if(pv.mode==='day')label=dlong(a).charAt(0).toUpperCase()+dlong(a).slice(1)+(a===TODAY?' · aujourd\'hui':'');
+ else if(pv.mode==='week')label='Sem. '+weekAB(a)+' · '+dlabel(a)+' → '+dlabel(b);
  else{const d1=parseYmd(a),d2=parseYmd(b);label=pv.mode==='month'?MOIS[d1.getMonth()]+' '+d1.getFullYear():MOIS[d1.getMonth()]+' → '+MOIS[d2.getMonth()]+' '+d2.getFullYear();label=label.charAt(0).toUpperCase()+label.slice(1);}
- const navAttr=pv.mode==='week'?'data-wk':'data-pnav';const step=pv.mode==='week'?7:(pv.mode==='month'?1:3);
- return '<div class="card" style="padding:12px 14px"><div class="row" style="justify-content:space-between;gap:12px">'+
- '<div class="row"><div class="seg">'+modes.map(m=>'<button data-pmode="'+m[0]+'" class="'+(pv.mode===m[0]?'on':'')+'">'+m[1]+'</button>').join('')+'</div>'+
- '<div class="seg" title="Affichage"><button data-detail="full" class="'+(pv.detail==='full'?'on':'')+'">Chantiers + heures</button><button data-detail="hours" class="'+(pv.detail==='hours'?'on':'')+'">Heures seules</button></div><div class="seg" title="Disposition"><button data-orient="rows" class="'+(pv.orient==='rows'?'on':'')+'">Noms à gauche</button><button data-orient="cols" class="'+(pv.orient==='cols'?'on':'')+'">Noms en haut</button></div><button '+navAttr+'="-'+step+'">◀</button><b style="min-width:220px;text-align:center">'+label+'</b><button '+navAttr+'="'+step+'">▶</button><button '+navAttr+'="0">Aujourd\'hui</button></div>'+
- '<div class="row"><select id="pvEmp">'+opts([['all','Toutes les personnes']].concat(EMPS.map(e=>[e.id,e.prenom+' '+e.nom])),pv.emp)+'</select>'+
- '<select id="pvTeam">'+opts([['all','Toutes les équipes'],['bonose','Équipe Julien'],['lamasine','Équipe Jérémy']],pv.team)+'</select>'+
- '<select id="pvSite">'+opts([['all','Tous les sites']].concat(siteList().map(s=>[s,s])),pv.site)+'</select>'+
- ((pv.emp!=='all'||pv.team!=='all'||pv.site!=='all')?'<button data-pvreset>Effacer les filtres</button>':'')+'<button class="pri" data-absadd="">+ Absence</button></div></div></div>';
+ const navAttr=pv.mode==='day'?'data-pday':pv.mode==='week'?'data-wk':'data-pnav';const step=pv.mode==='day'?1:pv.mode==='week'?7:(pv.mode==='month'?1:3);
+ const chefs=EMPS.filter(e=>e.role==='chef');
+ const showView=pv.mode==='week';const showOrient=pv.mode==='week'||((pv.mode==='month'||pv.mode==='quarter')&&pv.emp==='all');
+ return '<div class="card toolbar">'+
+ '<div class="tb-row"><div class="seg seg-modes">'+modes.map(m=>'<button data-pmode="'+m[0]+'" class="'+(pv.mode===m[0]?'on':'')+'">'+m[1]+'</button>').join('')+'</div>'+
+ '<div class="tb-nav"><button class="nav-btn" '+navAttr+'="-'+step+'" aria-label="Précédent">◀</button><b class="tb-label">'+label+'</b><button class="nav-btn" '+navAttr+'="'+step+'" aria-label="Suivant">▶</button><button '+navAttr+'="0">Aujourd\'hui</button></div></div>'+
+ '<div class="tb-row">'+(showView?'<div class="seg" title="Affichage"><button data-detail="full" class="'+(pv.detail==='full'?'on':'')+'">Chantiers + heures</button><button data-detail="hours" class="'+(pv.detail==='hours'?'on':'')+'">Heures seules</button></div>':'')+
+ (showOrient?'<div class="seg hide-phone" title="Disposition"><button data-orient="rows" class="'+(pv.orient==='rows'?'on':'')+'">Noms à gauche</button><button data-orient="cols" class="'+(pv.orient==='cols'?'on':'')+'">Noms en haut</button></div>':'')+
+ '<div class="tb-filters"><select id="pvEmp" aria-label="Personne">'+opts([['all','Toutes les personnes']].concat(EMPS.map(e=>[e.id,e.prenom+' '+e.nom])),pv.emp)+'</select>'+
+ '<select id="pvTeam" aria-label="Équipe">'+opts([['all','Toutes les équipes']].concat(chefs.map(c=>[c.id,'Équipe '+c.prenom])),pv.team)+'</select>'+
+ '<select id="pvSite" aria-label="Site">'+opts([['all','Tous les sites']].concat(siteList().map(s=>[s,s])),pv.site)+'</select>'+
+ ((pv.emp!=='all'||pv.team!=='all'||pv.site!=='all')?'<button data-pvreset>Effacer</button>':'')+'<button class="pri" data-absadd="">+ Absence</button></div></div></div>';
+}
+function dayView(emps,d){
+ const ab0=emps.map(e=>({e,ab:absOf(e.id,d),ivs:dayIvs(e.id,d)})).filter(x=>x.ab||x.ivs.length||pvState().site==='all');
+ const working=ab0.filter(x=>x.ivs.length&&!x.ab),absents=ab0.filter(x=>x.ab),off=ab0.filter(x=>!x.ab&&!x.ivs.length);
+ const all=working.flatMap(x=>x.ivs);const sts=all.map(dispStatus);
+ let h='<div class="grid4 kpis-day"><div class="kpi"><div class="n">'+working.length+'</div><div class="l">salariés planifiés</div></div><div class="kpi ok"><div class="n">'+sts.filter(s=>s==='validee').length+' / '+all.length+'</div><div class="l">interventions pointées</div></div><div class="kpi '+(sts.includes('manquant')?'bad':'ok')+'"><div class="n">'+sts.filter(s=>s==='manquant').length+'</div><div class="l">non pointées</div></div><div class="kpi '+(sts.some(s=>s==='ecart'||s==='validee_chef')?'warn':'ok')+'"><div class="n">'+sts.filter(s=>s==='ecart'||s==='validee_chef').length+'</div><div class="l">écarts</div></div></div>';
+ h+='<div class="daylist">'+working.map(x=>{const tot=x.ivs.reduce((t,i)=>t+(i.rs&&i.re?counted(i):plannedMin(i)),0);return '<div class="card dcard"><div class="row" style="justify-content:space-between"><div><b>'+esc(x.e.prenom+' '+x.e.nom)+'</b><div class="small muted">'+contractLabel(x.e.id,mondayOf(d))+'</div></div><div class="tot"><b>'+fmtD(tot)+'</b></div></div><div class="dchips">'+x.ivs.map(chipHtml).join('')+'</div><div class="add" data-addiv="'+x.e.id+'|'+d+'">+ intervention</div></div>';}).join('')+'</div>';
+ if(absents.length)h+='<div class="card"><h2>Absents</h2>'+absents.map(x=>'<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:1">'+esc(x.e.prenom+' '+x.e.nom)+'</span><span class="pill st-absent">'+x.ab+'</span> <span class="small muted">'+esc(ABS_CODES[x.ab])+'</span></div>').join('')+'</div>';
+ if(off.length)h+='<div class="card"><h2>Repos</h2><div class="small muted">'+off.map(x=>esc(x.e.prenom+' '+x.e.nom)).join(' · ')+'</div><div class="row" style="margin-top:8px;flex-wrap:wrap">'+off.map(x=>'<span class="add" style="padding:4px 8px" data-addiv="'+x.e.id+'|'+d+'">+ '+esc(x.e.prenom)+'</span>').join('')+'</div></div>';
+ return h;
 }
 function planningView(){
  const pv=pvState();const [a,b]=pvPeriod();ensureRange(a,b);
@@ -481,7 +565,8 @@ function planningView(){
  let h=pvToolbar();
  h+='<div class="legend">'+['validee','ecart','manquant','en_cours','prevue','refusee','absent'].map(s=>'<span class="pill st-'+s+'">'+ST_LABEL[s]+'</span>').join('')+'<span class="pill" style="box-shadow:inset 0 0 0 1px #7c5cd6">chantier ponctuel</span><span class="pill" style="background:#fff9db">jour férié</span></div>';
  if(!emps.length)return h+'<div class="card muted">Aucune personne ne correspond aux filtres.</div>';
- if(pv.mode==='week'&&pv.detail==='hours')h+=pv.orient==='cols'?compactGridT(emps,days,true):compactGrid(emps,days,true);
+ if(pv.mode==='day')h+=dayView(emps,a);
+ else if(pv.mode==='week'&&pv.detail==='hours')h+=pv.orient==='cols'?compactGridT(emps,days,true):compactGrid(emps,days,true);
  else if(pv.mode==='week')h+=pv.orient==='cols'?weekGridT(emps,days):weekGrid(emps,days);
  else if(emps.length===1)h+=calendarView(emps[0],a,b);
  else h+=pv.orient==='cols'?compactGridT(emps,days):compactGrid(emps,days);
@@ -586,7 +671,7 @@ function validView(){
 }
 function pointageView(){
  const days=[...Array(7)].map((_,i)=>addDays(S.week,i));
- let h=weekNav()+'<div class="card scroll" style="padding:0"><table><thead><tr><th>Salarié</th><th class="num">Contrat</th>'+days.map(d=>'<th class="num">'+dlabel(d)+'</th>').join('')+'<th class="num">Total</th><th class="num">Écart contrat</th><th class="num">Compl. 10 %</th><th class="num">Compl. 25 %</th><th class="num">Supp. 25 %</th><th class="num">Supp. 50 %</th><th class="num">Nuit</th><th class="num">Dim.</th><th class="num">Férié</th><th class="num">En attente</th><th class="num">Récup. (solde)</th></tr></thead><tbody>';
+ let h=weekNav()+'<div class="card scroll" style="padding:0"><table class="stick1"><thead><tr><th>Salarié</th><th class="num">Contrat</th>'+days.map(d=>'<th class="num">'+dlabel(d)+'</th>').join('')+'<th class="num">Total</th><th class="num">Écart contrat</th><th class="num">Compl. 10 %</th><th class="num">Compl. 25 %</th><th class="num">Supp. 25 %</th><th class="num">Supp. 50 %</th><th class="num">Nuit</th><th class="num">Dim.</th><th class="num">Férié</th><th class="num">En attente</th><th class="num">Récup. (solde)</th></tr></thead><tbody>';
  EMPS.forEach(e=>{const w=wk(e.id,S.week);const rb=recupBalance(e.id);const lim=plafondMin(e);
   h+='<tr><td>'+esc(e.nom+' '+e.prenom)+'</td><td class="num">'+dec(w.contract)+'</td>'+w.days.map(x=>'<td class="num">'+(x.abs?'<span class="pill st-absent">'+x.abs+'</span>':(x.m?dec(x.m):(x.pl?(x.d>=TODAY?'<span class="muted" title="prévu, pas encore pointé">('+dec(x.pl)+')</span>':'<span class="over" title="non pointé">0</span>'):'<span class="muted">R</span>')))+'</td>').join('')+
   '<td class="num"><b>'+dec(w.total)+'</b></td><td class="num '+(w.diff>0?'over':'')+'">'+(w.diff>0?'+':'')+dec(w.diff)+'</td><td class="num">'+(w.c10?dec(w.c10):'')+'</td><td class="num '+(w.c25?'over':'')+'">'+(w.c25?dec(w.c25):'')+'</td><td class="num">'+(w.s25?dec(w.s25):'')+'</td><td class="num">'+(w.s50?dec(w.s50):'')+'</td><td class="num">'+(w.nuit?dec(w.nuit):'')+'</td><td class="num">'+(w.dim?dec(w.dim):'')+'</td><td class="num">'+(w.fer?dec(w.fer):'')+'</td><td class="num">'+(w.pend?'<span class="pill st-ecart">+'+dec(w.pend)+'</span>':'')+'</td><td class="num">'+(rb.bal?dec(rb.bal):'')+'</td></tr>';});
@@ -663,7 +748,7 @@ function ensureWeek(d){const w=mondayOf(d);if(!S.genWeeks.includes(w)){genWeek(w
 
 /* ====== Événements ====== */
 document.addEventListener('click',ev=>{
- const t=ev.target.closest('[data-tab],[data-wk],[data-editiv],[data-addiv],[data-absadd],[data-delabs],[data-decide],[data-act],[data-ecart],[data-ptab],[data-day],[data-copycsv],[data-close-month],[data-pmode],[data-orient],[data-detail],[data-pnav],[data-pvreset],[data-gocell],[data-editct],[data-addcontrat],[data-editcontrat],[data-addponct],[data-addslot],[data-addtype],[data-edittype],#resetBtn,#logoutBtn,#pwdBtn,[data-empedit],[data-code],[data-gest],[data-csvdl]');
+ const t=ev.target.closest('[data-tab],[data-wk],[data-editiv],[data-addiv],[data-absadd],[data-delabs],[data-decide],[data-act],[data-ecart],[data-ptab],[data-day],[data-copycsv],[data-close-month],[data-pmode],[data-pday],[data-orient],[data-detail],[data-pnav],[data-pvreset],[data-gocell],[data-editct],[data-addcontrat],[data-editcontrat],[data-addponct],[data-addslot],[data-addtype],[data-edittype],#resetBtn,#logoutBtn,#pwdBtn,[data-empedit],[data-code],[data-gest],[data-csvdl]');
  if(!t||t.closest('.modal-bg'))return;
  if(t.id==='logoutBtn'){api('/api/logout',{}).finally(()=>location.reload());return;}
  if(t.id==='pwdBtn'){pwdModal();return;}
@@ -681,7 +766,8 @@ document.addEventListener('click',ev=>{
  if(t.dataset.edittype){typeModal(t.dataset.edittype);return;}
  if(t.dataset.detail){pvState().detail=t.dataset.detail;save();render();return;}
  if(t.dataset.orient){pvState().orient=t.dataset.orient;save();render();return;}
- if(t.dataset.pmode){pvState().mode=t.dataset.pmode;if(t.dataset.pmode!=='week')S.pmonth=monthStart(S.week);save();render();return;}
+ if(t.dataset.pday!==undefined){const n=+t.dataset.pday;S.pday=n===0?TODAY:addDays(S.pday||TODAY,n);const w=mondayOf(S.pday);if(!S.genWeeks.includes(w))genWeek(w);save();render();return;}
+ if(t.dataset.pmode){const m=t.dataset.pmode,cur=pvState().mode;if(m==='day'&&cur==='week')S.pday=(S.week<=TODAY&&TODAY<=addDays(S.week,6))?TODAY:S.week;if(m==='week'&&cur==='day')S.week=mondayOf(S.pday||TODAY);pvState().mode=m;if(m==='month'||m==='quarter')S.pmonth=monthStart(cur==='day'?(S.pday||TODAY):S.week);save();render();return;}
  if(t.dataset.pnav!==undefined){const n=+t.dataset.pnav;S.pmonth=n===0?monthStart(TODAY):addMonths(S.pmonth,n);save();render();return;}
  if(t.dataset.pvreset!==undefined){Object.assign(pvState(),{emp:'all',team:'all',site:'all'});save();render();return;}
  if(t.dataset.gocell&&(pvState().mode==='week'||pvState().emp!=='all')){const [e,d]=t.dataset.gocell.split('|');dayModal(e,d);return;}
@@ -717,7 +803,7 @@ function applyDelta(r){
  else COLLS.forEach(c=>{const ups=r.up[c]||[],dels=r.del[c]||[];if(!ups.length&&!dels.length)return;const m=new Map(docsOf(c).map(d=>[d.id,d]));SNAP[c]=SNAP[c]||{};ups.forEach(d=>{m.set(d.id,d);SNAP[c][d.id]=JSON.stringify(d);});dels.forEach(id=>{m.delete(id);delete SNAP[c][id];});setColl(c,[...m.values()]);});
  VERSION=r.version;refreshEmps();
 }
-const UIKEYS=['tab','week','ptab','pv','pmonth','tyEmp','role','who'];
+const UIKEYS=['tab','week','pday','ptab','pv','pmonth','tyEmp','role','who'];
 function saveUi(){try{localStorage.setItem('socanet-ui-'+USER.login,JSON.stringify(Object.fromEntries(UIKEYS.map(k=>[k,S[k]]))));}catch(e){}}
 let syncTimer=null;
 function save(){if(!USER)return;saveUi();clearTimeout(syncTimer);syncTimer=setTimeout(doSync,300);}
