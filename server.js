@@ -44,8 +44,10 @@ function allDocs(coll) { return db.prepare('SELECT json FROM docs WHERE coll=?')
 /* ---------- données initiales ---------- */
 if (getVersion() === 0 && !db.prepare('SELECT 1 FROM docs LIMIT 1').get()) {
   const seedFile = path.join(__dirname, 'seed.json');
-  if (fs.existsSync(seedFile)) {
-    const seed = JSON.parse(fs.readFileSync(seedFile, 'utf8'));
+  let seed = null;
+  if (process.env.SEED_GZ_B64) seed = JSON.parse(require('node:zlib').gunzipSync(Buffer.from(process.env.SEED_GZ_B64, 'base64')).toString('utf8'));
+  else if (fs.existsSync(seedFile)) seed = JSON.parse(fs.readFileSync(seedFile, 'utf8'));
+  if (seed) {
     const ins = db.prepare('INSERT INTO docs(coll,id,json,ver) VALUES(?,?,?,1)');
     db.exec('BEGIN');
     for (const coll of Object.keys(seed)) for (const o of seed[coll]) ins.run(coll, String(o.id), JSON.stringify(o));
