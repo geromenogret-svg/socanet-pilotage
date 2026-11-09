@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Socanet · Planning & pointage</title>
+<meta name="theme-color" content="#1679b8">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="icon" href="/icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f7fa;--card:#fff;--ink:#2e3336;--muted:#62707a;--line:#dde6ec;--brand:#1679b8;--brand2:#e3f3fc;--blue:#29abe2;--green:#8dc63f;--ok:#4f8a1c;--okbg:#eef7e1;--warn:#b26a00;--warnbg:#fff2dc;--bad:#c0392b;--badbg:#fde8e6;--info:#1f5fa8;--infobg:#e6eefa;--grey:#7b8a85;--greybg:#eef1f0}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:#fff;padding:7px 12px;color:var(--ink)}
+button:hover{border-color:#b9c7c2}
+button.pri{background:var(--brand);color:#fff;border-color:var(--brand)}
+button.pri:hover{background:#12659a}
+button.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+button.bad{background:#fff;border-color:var(--bad);color:var(--bad)}
+button.sm{padding:4px 8px;font-size:12px}
+select,input{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+header{background:#fff;color:var(--ink);padding:8px 18px;border-bottom:4px solid transparent;border-image:linear-gradient(90deg,var(--green),var(--blue)) 1;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+header .logo{display:flex;align-items:center;gap:12px;font-weight:600;color:var(--muted)}
+header .logo img{height:56px;display:block}
+header .logo span{border-left:1px solid var(--line);padding-left:12px}
+header .tag{font-size:11px;background:#ffcf5a;color:#3b2a00;padding:2px 8px;border-radius:20px;font-weight:600}
+header .sp{flex:1}
+header select{background:#fff;color:var(--ink)}
+header button{background:#fff;color:var(--brand)}
+nav.tabs{display:flex;gap:4px;padding:10px 18px 0;flex-wrap:wrap;border-bottom:1px solid var(--line);background:#fff}
+nav.tabs button{border:none;border-bottom:3px solid transparent;border-radius:0;padding:9px 12px;background:none;color:var(--muted);font-weight:500}
+nav.tabs button.on{color:var(--brand);border-bottom-color:var(--green)}
+nav.tabs .badge{background:var(--bad);color:#fff;border-radius:10px;font-size:11px;padding:1px 6px;margin-left:4px}
+main{padding:18px;max-width:1500px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:16px}
+.card .sub{color:var(--muted);font-size:12.5px;margin-bottom:12px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:12px;padding:14px}
+.kpi .n{font-size:28px;font-weight:700}
+.kpi .l{color:var(--muted);font-size:12.5px}
+.kpi.bad .n{color:var(--bad)}.kpi.warn .n{color:var(--warn)}.kpi.ok .n{color:var(--ok)}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;background:#fafcfb;position:sticky;top:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow:auto}
+.pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:20px;font-weight:600;white-space:nowrap}
+.st-prevue{background:var(--greybg);color:var(--grey)}
+.st-en_cours{background:var(--infobg);color:var(--info)}
+.st-ecart{background:var(--warnbg);color:var(--warn)}
+.st-validee_chef{background:#fff7c7;color:#7a6400}
+.st-validee{background:var(--okbg);color:var(--ok)}
+.st-refusee{background:var(--badbg);color:var(--bad)}
+.st-manquant{background:var(--badbg);color:var(--bad)}
+.st-absent{background:#ecebf7;color:#4b47a0}
+.plan{font-size:12px}
+.plan td{min-width:118px;padding:4px}
+.plan td.name{min-width:150px;font-weight:600;background:#fafcfb;position:sticky;left:0;z-index:1}
+.plan th.name{position:sticky;left:0;z-index:2}
+.plan .wk{background:#f6f8f7}
+.plan .fer{background:#fff9db}
+.chip{display:block;border-radius:6px;padding:3px 6px;margin:2px 0;cursor:pointer;border-left:4px solid var(--grey);background:var(--greybg);line-height:1.3}
+.chip b{font-weight:600}
+.chip.c-validee{border-color:var(--ok);background:var(--okbg)}
+.chip.c-ecart,.chip.c-validee_chef{border-color:var(--warn);background:var(--warnbg)}
+.chip.c-refusee{border-color:var(--bad);background:var(--badbg)}
+.chip.c-manquant{border-color:var(--bad);background:#fff;outline:1px dashed var(--bad)}
+.chip.c-en_cours{border-color:var(--info);background:var(--infobg)}
+.chip.c-ponct{box-shadow:inset 0 0 0 1px #7c5cd6}
+.chip.c-abs{border-color:#4b47a0;background:#ecebf7;cursor:default}
+.add{color:var(--muted);font-size:11px;cursor:pointer;border:1px dashed var(--line);border-radius:6px;text-align:center;padding:1px;margin-top:2px}
+.add:hover{color:var(--brand);border-color:var(--brand)}
+.tot{font-variant-numeric:tabular-nums;white-space:nowrap}
+.over{color:var(--bad);font-weight:700}
+.alert{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;margin-bottom:8px;border:1px solid var(--line)}
+.alert.bad{background:var(--badbg);border-color:#f3c3bd}
+.alert.warn{background:var(--warnbg);border-color:#f2d7a6}
+.alert.info{background:var(--infobg);border-color:#c5d6ef}
+.alert .t{font-weight:600}
+.alert .d{color:var(--muted);font-size:12.5px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.phone{max-width:420px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:28px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.06);font-size:17px}
+.phone h1{font-size:22px;margin:0}
+.phone .brand{display:flex;justify-content:center;margin-bottom:6px}.phone .brand img{height:56px}
+.phone .who{color:var(--muted);font-size:14px;margin-bottom:10px}
+.phone .ptabs{display:flex;gap:6px;margin:12px 0}
+.phone .ptabs button{flex:1;font-size:14px;padding:9px 4px}
+.phone .ptabs button.on{background:var(--blue);color:#fff;border-color:var(--brand)}
+.daynav{display:flex;align-items:center;justify-content:space-between;margin:8px 0 12px}
+.daynav b{font-size:16px}
+.iv{border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.iv .site{font-size:19px;font-weight:700}
+.iv .hours{font-size:17px;color:var(--muted);margin:2px 0 10px}
+.iv .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.iv .btns button{padding:13px 6px;font-size:16px;font-weight:600;border-radius:12px}
+.iv .btns .full{grid-column:1/3}
+.big{font-size:34px;font-weight:700}
+.modal-bg{position:fixed;inset:0;background:rgba(10,25,20,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{background:#fff;border-radius:14px;padding:18px;width:100%;max-width:440px;max-height:90vh;overflow:auto}
+.modal h3{margin:0 0 12px}
+.modal label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+.modal input,.modal select{width:100%}
+.modal .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#2e3336;color:#fff;padding:10px 16px;border-radius:10px;z-index:60;font-size:14px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;margin-bottom:10px}
+.bar{height:10px;border-radius:6px;background:var(--greybg);overflow:hidden}
+.bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--blue))}
+.bar.over>div{background:var(--bad)}
+textarea{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:none;border-radius:0;border-right:1px solid var(--line);padding:7px 14px}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--brand);color:#fff}
+.cgrid{font-size:11.5px}
+.cgrid th,.cgrid td{padding:2px;text-align:center;border-bottom:1px solid var(--line)}
+.cgrid td.name,.cgrid th.name{text-align:left;min-width:150px;padding:4px 8px;position:sticky;left:0;background:#fafcfb;z-index:1;font-weight:600}
+.cgrid th.name{z-index:3}
+.cgrid th.dh{min-width:30px;font-weight:600;line-height:1.2}
+.cgrid th.mth{text-align:left;border-left:2px solid var(--line);text-transform:capitalize;color:var(--ink)}
+.cgrid .mon{border-left:2px solid var(--line)}
+.cgrid .wk{background:#f6f8f7}.cgrid .fer{background:#fff9db}.cgrid th.tdy{background:var(--brand);color:#fff}
+.cgrid td.num{text-align:right;padding:4px 8px}
+.cg{display:block;border-radius:5px;padding:3px 0;font-variant-numeric:tabular-nums;cursor:pointer;font-weight:600}
+.cg-ok{background:var(--okbg);color:var(--ok)}.cg-ecart{background:var(--warnbg);color:var(--warn)}.cg-miss{background:var(--badbg);color:var(--bad)}.cg-prev{background:var(--greybg);color:var(--grey);font-weight:500}.cg-cours{background:var(--infobg);color:var(--info)}.cg-abs{background:#ecebf7;color:#4b47a0;cursor:default;font-size:10.5px}.cg-ponct{box-shadow:inset 0 0 0 1px #7c5cd6}
+.cal{table-layout:fixed;font-size:12px}
+.cal th{text-align:center}
+.cal td{height:96px;padding:4px;border:1px solid var(--line);width:13%}
+.cal td.num{width:9%;vertical-align:middle}
+.cal td.out{background:#f7f9fa}.cal td.fer{background:#fff9db}.cal td.tdy{outline:2px solid var(--blue);outline-offset:-2px}
+.cal .dn{font-weight:600;color:var(--muted);font-size:11.5px;margin-bottom:2px}
+.planT td{min-width:132px}
+.planT th.ehead{min-width:132px;text-align:center;line-height:1.25;vertical-align:bottom}
+.planT td.name{min-width:110px}
+.planT tr.totrow td{background:#fafcfb;font-weight:600;border-top:2px solid var(--line)}
+.cgridT th.ehead{min-width:62px;font-size:11px;line-height:1.2;vertical-align:bottom;font-weight:600}
+.cgridT td.name{min-width:84px;font-weight:500}
+.cgridT td.mrow{text-align:left;font-weight:700;text-transform:capitalize;background:var(--brand2);padding:5px 8px}
+.cgridT .monT{border-top:2px solid var(--line)}
+.cgridT td.tdyT{background:var(--brand);color:#fff}
+.cgridT tr.totrow td{background:#fafcfb;border-top:2px solid var(--line);font-size:11px;text-align:center}
+.cbig{font-size:14px}.cbig th.dh{min-width:70px}.cbig .cg{padding:8px 0;font-size:15px}.cbig td{padding:4px}.cgridT.cbig th.ehead{min-width:78px}
+.sync{font-size:12px;font-weight:600}.s-ok{color:var(--ok)}.s-run{color:var(--muted)}.s-err{color:var(--bad)}
+.btnlink{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:8px;color:var(--brand);text-decoration:none}
+.login{max-width:380px;margin:40px auto;background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px;text-align:center}
+.login img{height:120px}.login h1{font-size:20px;margin:6px 0 14px}
+.login form{text-align:left}.login label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}.login input{width:100%;font-size:17px;padding:11px}
+.login button{width:100%;margin-top:18px;padding:13px;font-size:17px;font-weight:600}
+#loginErr{margin-top:10px;color:var(--bad);text-align:center}
+.demo-note{background:#fff8e1;border:1px solid #f1df9c;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+/* ====== Utilitaires dates / heures ====== */
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parseYmd=s=>{const a=s.split('-').map(Number);return new Date(a[0],a[1]-1,a[2]);};
+const addDays=(s,n)=>{const d=parseYmd(s);d.setDate(d.getDate()+n);return ymd(d);};
+const mondayOf=s=>{const d=parseYmd(s);d.setDate(d.getDate()-((d.getDay()+6)%7));return ymd(d);};
+const toMin=t=>{const a=t.split(':').map(Number);return a[0]*60+a[1];};
+const toHHMM=m=>pad(Math.floor(m/60))+':'+pad(m%60);
+const hfr=t=>{const m=toMin(t);return Math.floor(m/60)+'h'+pad(m%60);};
+const fmtD=m=>{const s=m<0?'−':'';m=Math.abs(Math.round(m));return s+Math.floor(m/60)+'h'+pad(m%60);};
+const dec=m=>(m/60).toFixed(2).replace('.',',');
+const JOURS=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+const JOURSL=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const dlabel=s=>{const d=parseYmd(s);return JOURS[d.getDay()]+' '+d.getDate()+'/'+pad(d.getMonth()+1);};
+const dlong=s=>{const d=parseYmd(s);return JOURSL[d.getDay()]+' '+d.getDate()+' '+MOIS[d.getMonth()];};
+const nowMin=()=>{const d=new Date();return d.getHours()*60+d.getMinutes();};
+const TODAY=ymd(new Date());
+const W0=mondayOf(TODAY);
+const FERIES=['2026-01-01','2026-04-03','2026-04-06','2026-05-01','2026-05-08','2026-05-14','2026-05-22','2026-05-25','2026-07-14','2026-07-21','2026-08-15','2026-11-01','2026-11-11','2026-12-25','2027-01-01','2027-03-26','2027-03-29','2027-05-01','2027-05-06','2027-05-08','2027-05-17','2027-05-22'];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ====== Référentiels (repris du planning d'octobre 2026) ====== */
+const EMPS0=[];
+let EMPS=EMPS0,EMP=Object.fromEntries(EMPS0.map(e=>[e.id,e]));
+function refreshEmps(){const all=(S&&S.emps&&S.emps.length)?S.emps:EMPS0;EMP=Object.fromEntries(all.map(e=>[e.id,e]));EMPS=all.filter(e=>e.actif!==false).sort((a,b)=>((a.role==='chef'?0:1)-(b.role==='chef'?0:1))||String(a.nom).localeCompare(String(b.nom)));}
+const fullName=id=>EMP[id]?EMP[id].prenom+' '+EMP[id].nom:id;
+const SITES=['AUCHAN Ducos','AUCHAN Lamentin','AUCHAN Marin','AUCHAN FdeF','ANTIANE','CC Batelière','Géant Batelière','Groupe Ste Claire','CGFF','Cabinet Célestine','SCI Flériane','Blue Automobile','Blue Génipa','ETE','Carré d\'Eve','SCI Elec','Électrique Auto','HO HIO HEN','Bureau / contrôles','LA MAUNY'];
+// days: 1=lun ... 7=dim
+const T=(emp,site,days,s,e)=>({emp,site,days,s,e});
+const TYPES=[];
+const ABS_CODES={CP:'Congés payés',AM:'Arrêt maladie',AT:'Accident du travail',NJ:'Absence non justifiée',REC:'Récupération',CPD:'Congé événement familial',JF:'Jour férié chômé'};
+const MOTIFS=['Surcharge / demande du client','Retard','Remplacement d\'un collègue','Départ anticipé','Oubli de pointage','Autre'];
+
+/* ====== État ====== */
+const KEY='socanet-proto-v2';
+let S=null;
+const newId=()=>uid('m');
+function addIv(o){if(o.id&&S.ivs.some(i=>i.id===o.id))return null;const iv=Object.assign({id:newId(),rs:null,re:null,status:'prevue',motif:'',decision:null,source:'type',chantier:null},o);S.ivs.push(iv);return iv;}
+function genWeek(w){
+ if(!isMgrUser()||S.genWeeks.includes(w))return;
+ if(addDays(w,6)<(S.params.goLive||'2000-01-01'))return;
+ const ab=weekAB(w);
+ for(let i=0;i<7;i++){const date=addDays(w,i);const di=i+1;
+  S.types.forEach(t=>{if(t.days.includes(di)&&(t.wk==='all'||t.wk===ab)&&date>=(S.params.goLive||''))addIv({id:'g_'+t.id+'_'+date,emp:t.emp,site:t.site,date,ps:t.s,pe:t.e});});
+  S.chantiers.forEach(c=>(c.slots||[]).forEach(sl=>{if(sl.date===date)addIv({id:'p_'+c.id+'_'+sl.emp+'_'+date+'_'+sl.s.replace(':',''),emp:sl.emp,site:c.site,date,ps:sl.s,pe:sl.e,source:'ponctuel',chantier:c.id});}));
+ }
+ S.genWeeks.push(w);
+}
+function absOf(emp,date){const a=S.abs.find(x=>x.emp===emp&&date>=x.from&&date<=x.to);return a?a.code:null;}
+
+/* ====== Calculs ====== */
+const dur=(a,b)=>Math.max(0,toMin(b)-toMin(a));
+const plannedMin=iv=>dur(iv.ps,iv.pe);
+const realMin=iv=>(iv.rs&&iv.re)?dur(iv.rs,iv.re):0;
+function dispStatus(iv){
+ if(absOf(iv.emp,iv.date))return 'absent';
+ if(iv.status==='prevue'||iv.status==='en_cours'){
+  const nm=nowMin();
+  if(iv.date<TODAY||(iv.date===TODAY&&toMin(iv.ps)+30<=nm&&iv.status==='prevue')||(iv.date===TODAY&&iv.status==='en_cours'&&toMin(iv.pe)+60<=nm))return 'manquant';
+ }
+ return iv.status;
+}
+const ST_LABEL={prevue:'Prévue',en_cours:'En cours',ecart:'Écart à arbitrer',validee_chef:'Validée chef · à arbitrer',validee:'Validée',refusee:'Extra refusé',manquant:'Non pointée',absent:'Absent'};
+function counted(iv){
+ if(absOf(iv.emp,iv.date))return 0;
+ if(!(iv.rs&&iv.re))return 0;
+ const r=realMin(iv),p=plannedMin(iv);
+ if(iv.status==='validee')return r;
+ if(['refusee','ecart','validee_chef'].includes(iv.status))return Math.min(r,p);
+ return 0;
+}
+const extraMin=iv=>Math.max(0,realMin(iv)-plannedMin(iv));
+const recupOf=iv=>(iv.status==='validee'&&iv.decision==='recup')?extraMin(iv):0;
+function overlap(a1,a2,b1,b2){return Math.max(0,Math.min(a2,b2)-Math.max(a1,b1));}
+function nightMin(iv){const c=counted(iv);if(!c)return 0;const s=toMin(iv.rs),e=s+c;const nd=toMin(S.params.nuitDebut),nf=toMin(S.params.nuitFin);return overlap(s,e,0,nf)+overlap(s,e,nd,1440);}
+const isSun=d=>parseYmd(d).getDay()===0;
+const isFer=d=>FERIES.includes(d);
+function plafondMin(e,w){const f=S.params.plafond==='1/3'?1/3:1/10;return Math.round(hebdoW(e.id,w||S.week)*60*f);}
+function wk(emp,w){
+ const e=EMP[emp];const days=[];let total=0,planned=0,nuit=0,dim=0,fer=0,recup=0,pend=0;
+ for(let i=0;i<7;i++){const d=addDays(w,i);let m=0,pl=0;
+  S.ivs.filter(x=>x.emp===emp&&x.date===d).forEach(iv=>{const c=counted(iv);m+=c;nuit+=nightMin(iv);if(isSun(d))dim+=c;if(isFer(d))fer+=c;recup+=recupOf(iv);if(['ecart','validee_chef'].includes(iv.status))pend+=Math.max(0,realMin(iv)-plannedMin(iv));if(!absOf(emp,d)){planned+=plannedMin(iv);pl+=plannedMin(iv);}});
+  days.push({d,m,pl,abs:absOf(emp,d)});total+=m;}
+ const hw=hebdoW(emp,w);const contract=Math.round(hw*60);
+ // absences rémunérées : comptent pour la durée prévue (CP, JF, REC, CPD)
+ let absPaid=0;days.forEach(x=>{if(['CP','JF','REC','CPD'].includes(x.abs)){S.ivs.filter(i=>i.emp===emp&&i.date===x.d).forEach(i=>absPaid+=plannedMin(i));}});
+ const pay=total-recup;const diff=total+absPaid-contract;
+ let c10=0,c25=0,s25=0,s50=0;const partiel=hw<35;
+ if(partiel){const comp=Math.max(0,pay-contract);const lim=Math.round(contract/10);c10=Math.min(comp,lim);c25=comp-c10;}
+ else{const sup=Math.max(0,pay-35*60);s25=Math.min(sup,8*60);s50=sup-s25;}
+ return {days,total,planned,contract,diff,c10,c25,s25,s50,nuit,dim,fer,recup,pend,partiel,absPaid};
+}
+function recupBalance(emp){let acq=0,taken=0;S.ivs.filter(i=>i.emp===emp).forEach(i=>{acq+=recupOf(i);if(absOf(emp,i.date)==='REC')taken+=plannedMin(i);});return {acq,taken,bal:acq-taken};}
+function chantierStats(c){const ivs=S.ivs.filter(i=>i.chantier===c.id);let done=0,plan=0;ivs.forEach(i=>{const st=dispStatus(i);if(i.rs&&i.re)done+=counted(i)+(['ecart','validee_chef'].includes(i.status)?extraMin(i):0);else if(st!=='manquant'&&st!=='absent')plan+=plannedMin(i);});return {ivs,done,plan,tot:done+plan};}
+
+/* ====== Contrats salariés, semaines A/B, chantiers ====== */
+function isoWeek(s){const d=parseYmd(s);const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=(t.getUTCDay()+6)%7;t.setUTCDate(t.getUTCDate()-dn+3);const fy=new Date(Date.UTC(t.getUTCFullYear(),0,4));return 1+Math.round(((t-fy)/864e5-3+((fy.getUTCDay()+6)%7))/7);}
+function weekAB(w){const odd=isoWeek(w)%2===1;return (odd===(S.params.semA!=='paire'))?'A':'B';}
+const CT=id=>S.contracts[id];
+function hebdoW(id,w){const c=CT(id);return (c.alt&&weekAB(w)==='B')?c.hB:c.hA;}
+function moyHebdo(id){const c=CT(id);return c.alt?(c.hA+c.hB)/2:c.hA;}
+const mensuel=id=>Math.round(moyHebdo(id)*52/12*100)/100;
+const fh=x=>String(Math.round(x*100)/100).replace('.',',');
+function contractLabel(id,w){const c=CT(id);if(!c.alt)return c.type+' · '+fh(c.hA)+' h';return c.type+' · A '+fh(c.hA)+' h / B '+fh(c.hB)+' h'+(w?' · sem. '+weekAB(w):'');}
+function siteList(){const s=[];S.contrats.forEach(c=>{if(c.actif!==false)s.push(c.nom);});S.chantiers.forEach(c=>s.push(c.site));s.push('Bureau / contrôles');return [...new Set(s)];}
+function typesWeekMin(emp,ab){return S.types.filter(t=>t.emp===emp&&(t.wk==='all'||t.wk===ab)).reduce((a,t)=>a+dur(t.s,t.e)*t.days.length,0);}
+function siteTypesMin(site,ab){return S.types.filter(t=>t.site===site&&(t.wk==='all'||t.wk===ab)).reduce((a,t)=>a+dur(t.s,t.e)*t.days.length,0);}
+function regenFuture(){
+ S.ivs=S.ivs.filter(i=>!(i.source==='type'&&i.status==='prevue'&&!i.rs&&i.date>=TODAY));
+ S.genWeeks.forEach(w=>{const ab=weekAB(w);for(let k=0;k<7;k++){const date=addDays(w,k);if(date<TODAY)continue;
+  S.types.forEach(t=>{if(!t.days.includes(k+1)||!(t.wk==='all'||t.wk===ab))return;addIv({id:'g_'+t.id+'_'+date,emp:t.emp,site:t.site,date,ps:t.s,pe:t.e});});}});
+}
+const JJ=['','lun','mar','mer','jeu','ven','sam','dim'];
+function contratsView(){
+ let h='<div class="card"><div class="row" style="justify-content:space-between"><h2>Salariés et forfaits d\'heures</h2><button class="pri" data-empedit="">+ Salarié</button></div><div class="sub">Le forfait du contrat sert de référence pour les écarts, les heures complémentaires et supplémentaires. Si un salarié alterne deux horaires, coche « Semaine A / B » : la semaine en cours est '+weekAB(W0)+' (paramètre : semaine A = semaines ISO '+(S.params.semA==='paire'?'paires':'impaires')+').</div><div class="scroll"><table><thead><tr><th>Salarié</th><th>Contrat</th><th class="num">Semaine A</th><th class="num">Semaine B</th><th class="num">Mensuel</th><th class="num">Planning type A</th><th class="num">Planning type B</th><th>Contrôle</th>'+(USER.role==='admin'?'<th>Accès</th>':'')+'<th></th></tr></thead><tbody>';
+ EMPS.forEach(e=>{const c=CT(e.id);const pA=typesWeekMin(e.id,'A'),pB=typesWeekMin(e.id,'B');
+  const chk=(p,hh)=>{const cm=Math.round(hh*60);if(hh<35){const lim=Math.round(cm*(S.params.plafond==='1/3'?1/3:1/10));if(p>=35*60)return 'bad';if(p-cm>lim)return 'bad';if(p>cm)return 'warn';}else if(p>cm)return 'warn';return '';};
+  const kA=chk(pA,c.hA),kB=chk(pB,c.alt?c.hB:c.hA);const worst=(kA==='bad'||kB==='bad')?'bad':((kA||kB)?'warn':'');
+  h+='<tr><td><b>'+esc(e.prenom+' '+e.nom)+'</b>'+(e.role==='chef'?'<div class="small muted">chef d\'équipe</div>':'')+(e.note?'<div class="small muted">'+esc(e.note)+'</div>':'')+'</td><td>'+c.type+(c.alt?' <span class="pill st-en_cours">A / B</span>':'')+'</td><td class="num">'+fh(c.hA)+' h</td><td class="num">'+(c.alt?fh(c.hB)+' h':'<span class="muted">=</span>')+'</td><td class="num">'+fh(mensuel(e.id))+' h</td><td class="num '+(kA==='bad'?'over':'')+'">'+fmtD(pA)+'</td><td class="num '+(kB==='bad'?'over':'')+'">'+fmtD(pB)+'</td><td>'+(worst==='bad'?'<span class="pill st-refusee">Planning au-delà du plafond</span>':worst==='warn'?'<span class="pill st-ecart">Au-dessus du contrat</span>':'<span class="pill st-validee">OK</span>')+'</td>'+(USER.role==='admin'?(()=>{const u=userOfEmp(e.id);return '<td>'+(u?'<span class="small"><b>'+esc(u.login)+'</b></span> '+(u.hasCode?'<span class="pill st-validee">code actif</span>':'<span class="pill st-ecart">sans code</span>'):'<span class="pill st-prevue">aucun accès</span>')+' <button class="sm" data-code="'+e.id+'">'+(u&&u.hasCode?'Nouveau code':'Créer l\'accès')+'</button></td>';})():'')+'<td><button class="sm" data-empedit="'+e.id+'">Modifier</button></td></tr>';});
+ return h+'</tbody></table></div><div class="small muted">Mensuel = moyenne hebdomadaire × 52 / 12. « Planning type » = total des affectations récurrentes de la semaine A ou B. Les salariés sortis ne sont plus affichés (rouvre leur fiche via l\'historique si besoin).</div></div>'+(USER.role==='admin'?gestCard():'');
+}
+function gestCard(){const g=(USERS||[]).filter(u=>u.role==='gest');return '<div class="card"><div class="row" style="justify-content:space-between"><div><h2>Comptes de gestion</h2><div class="sub" style="margin:0">Accès bureau (planning, validation, exports). Mot de passe de 10 caractères minimum.</div></div><button class="pri" data-gest="">+ Compte gestionnaire</button></div>'+(g.length?'<table style="margin-top:10px"><tbody>'+g.map(u=>'<tr><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.login)+'</td><td>'+(u.active?'<span class="pill st-validee">actif</span>':'<span class="pill st-prevue">désactivé</span>')+'</td><td><button class="sm" data-gest="'+esc(u.login)+'">Modifier</button></td></tr>').join('')+'</tbody></table>':'<div class="muted small" style="margin-top:10px">Aucun compte gestionnaire pour l\'instant (Marthe).</div>')+'</div>';}
+function contractModal(id){const c=CT(id);
+ modal('<h3>Forfait — '+esc(fullName(id))+'</h3><label>Type de contrat</label><select name="type">'+opts(['CDI','CDD'],c.type)+'</select><label>Heures par semaine (semaine A ou toutes les semaines)</label><input type="number" step="0.25" min="0" max="48" name="hA" required value="'+c.hA+'"><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" name="alt" style="width:auto" '+(c.alt?'checked':'')+' onchange="this.form.hB.disabled=!this.checked"> Horaire différent en semaine A et semaine B</label><label>Heures en semaine B</label><input type="number" step="0.25" min="0" max="48" name="hB" value="'+c.hB+'" '+(c.alt?'':'disabled')+'><div class="small muted" style="margin-top:8px">Un changement de forfait doit correspondre à un avenant signé.</div><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">Enregistrer</button></div>',
+ f=>{c.type=f.type;c.hA=Math.max(0,+f.hA||0);c.alt=!!f.alt;c.hB=c.alt?Math.max(0,+f.hB||0):c.hA;logA('Forfait modifié '+fullName(id)+' : '+contractLabel(id));toast('Forfait enregistré');});}
+function chantiersView(){
+ const nA=weekAB(W0);
+ let h='<div class="card"><div class="row" style="justify-content:space-between"><div><h2>Chantiers sous contrat</h2><div class="sub" style="margin:0">Fixes et récurrents. Leurs créneaux viennent des plannings types. Renseigne les heures vendues pour comparer avec les heures planifiées.</div></div><button class="pri" data-addcontrat>+ Chantier sous contrat</button></div><div class="scroll" style="margin-top:12px"><table><thead><tr><th>Chantier</th><th>Client</th><th class="num">Heures vendues / sem.</th><th class="num">Planifié sem. A</th><th class="num">Planifié sem. B</th><th class="num">Écart</th><th>Salariés affectés</th><th></th></tr></thead><tbody>';
+ S.contrats.forEach(c=>{const pA=siteTypesMin(c.nom,'A'),pB=siteTypesMin(c.nom,'B');const emps=[...new Set(S.types.filter(t=>t.site===c.nom).map(t=>EMP[t.emp].prenom))];const avg=(pA+pB)/2;const ec=c.vendues!=null?avg-c.vendues:null;
+  h+='<tr'+(c.actif===false?' style="opacity:.5"':'')+'><td><b>'+esc(c.nom)+'</b>'+(c.adresse?'<div class="small muted">'+esc(c.adresse)+'</div>':'')+(c.actif===false?' <span class="pill st-prevue">inactif</span>':'')+'</td><td>'+esc(c.client||'—')+'</td><td class="num">'+(c.vendues!=null?fmtD(c.vendues):'<span class="pill st-ecart">à saisir</span>')+'</td><td class="num">'+fmtD(pA)+'</td><td class="num">'+fmtD(pB)+'</td><td class="num '+(ec>0?'over':'')+'">'+(ec==null?'—':(ec>0?'+':'')+fmtD(ec))+'</td><td class="small">'+esc(emps.join(', ')||'—')+'</td><td><button class="sm" data-editcontrat="'+c.id+'">Modifier</button></td></tr>';});
+ h+='</tbody></table></div><div class="small muted">Écart = moyenne planifiée (A et B) − heures vendues. Positif = tu passes plus d\'heures que ce que le client paie.</div></div>';
+ h+='<div class="card"><div class="row" style="justify-content:space-between"><div><h2>Chantiers ponctuels</h2><div class="sub" style="margin:0">Interventions à durée limitée (remises en état, nettoyages après travaux…). Dans la version finale, ils sont importés d\'Axonaut.</div></div><button class="pri" data-addponct>+ Chantier ponctuel</button></div>';
+ if(!S.chantiers.length)h+='<div class="muted" style="margin-top:12px">Aucun chantier ponctuel.</div>';
+ S.chantiers.forEach(c=>{const st=chantierStats(c);const pct=c.vendues?Math.round(st.tot/c.vendues*100):0;
+  h+='<div style="border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px"><div class="row" style="justify-content:space-between"><div><b>'+esc(c.libelle)+'</b> — '+esc(c.client)+'<div class="small muted">'+esc(c.ref||'')+' · site '+esc(c.site)+(c.from?' · du '+dlabel(c.from)+' au '+dlabel(c.to):'')+'</div></div><div class="row"><div class="tot"><b>'+fmtD(st.tot)+'</b> / '+fmtD(c.vendues)+' vendues ('+pct+' %)</div><button class="sm pri" data-addslot="'+c.id+'">+ Affecter</button></div></div>'+
+  '<div class="bar '+(st.tot>c.vendues?'over':'')+'" style="margin:10px 0"><div style="width:'+Math.min(100,pct)+'%"></div></div><div class="small muted">Réalisé : '+fmtD(st.done)+' · Reste prévu : '+fmtD(st.plan)+(st.tot>c.vendues?' · <span class="over">dépassement prévu de '+fmtD(st.tot-c.vendues)+'</span>':'')+'</div>'+
+  (st.ivs.length?'<table style="margin-top:10px"><thead><tr><th>Date</th><th>Salarié</th><th>Prévu</th><th>Pointé</th><th>Statut</th></tr></thead><tbody>'+st.ivs.sort((a,b)=>a.date.localeCompare(b.date)).map(i=>{const s=dispStatus(i);return '<tr><td>'+dlabel(i.date)+'</td><td>'+esc(fullName(i.emp))+'</td><td>'+hfr(i.ps)+'–'+hfr(i.pe)+'</td><td>'+(i.rs&&i.re?hfr(i.rs)+'–'+hfr(i.re):'—')+'</td><td><span class="pill st-'+s+'">'+ST_LABEL[s]+'</span></td></tr>';}).join('')+'</tbody></table>':'<div class="small muted" style="margin-top:8px">Personne n\'est encore affecté.</div>')+'</div>';});
+ return h+'</div>';
+}
+function contratModal(id){const c=id?S.contrats.find(x=>x.id===id):null;
+ modal('<h3>'+(c?'Chantier sous contrat':'Nouveau chantier sous contrat')+'</h3><label>Nom du chantier / site</label><input name="nom" required value="'+esc(c?c.nom:'')+'" '+(c?'readonly title="Le nom sert de lien avec les plannings"':'')+' placeholder="ex. AUCHAN Ducos"><label>Client</label><input name="client" value="'+esc(c?c.client:'')+'"><label>Adresse</label><input name="adresse" value="'+esc(c?c.adresse||'':'')+'"><label>Heures vendues par semaine (contrat client)</label><input type="number" step="0.25" min="0" name="vendues" value="'+(c&&c.vendues!=null?c.vendues/60:'')+'" placeholder="à saisir"><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" name="actif" style="width:auto" '+(!c||c.actif!==false?'checked':'')+'> Contrat actif</label><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">Enregistrer</button></div>',
+ f=>{const v=f.vendues===''?null:Math.round(+f.vendues*60);if(c){c.client=f.client;c.adresse=f.adresse;c.vendues=v;c.actif=!!f.actif;}else{if(S.contrats.some(x=>x.nom===f.nom)){toast('Ce chantier existe déjà');return false;}S.contrats.push({id:uid('c'),nom:f.nom.trim(),client:f.client,adresse:f.adresse,vendues:v,actif:!!f.actif});}logA('Chantier sous contrat enregistré : '+(c?c.nom:f.nom));toast('Chantier enregistré');});}
+function ponctModal(){
+ modal('<h3>Nouveau chantier ponctuel</h3><label>Intitulé</label><input name="libelle" required placeholder="ex. Nettoyage après travaux"><label>Client</label><input name="client" required><label>Lieu (nom affiché sur le planning)</label><input name="site" required placeholder="ex. Villa Rouvel"><label>Référence Axonaut</label><input name="ref" placeholder="ex. DEV-2026-0142"><div class="row"><div style="flex:1"><label>Du</label><input type="date" name="from" required value="'+TODAY+'"></div><div style="flex:1"><label>Au</label><input type="date" name="to" required value="'+addDays(TODAY,7)+'"></div></div><label>Heures vendues (total)</label><input type="number" step="0.5" min="0" name="vendues" required><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">Créer</button></div>',
+ f=>{if(f.to<f.from){toast('Dates incohérentes');return false;}S.chantiers.push({id:uid('p'),libelle:f.libelle,client:f.client,site:f.site.trim(),ref:f.ref?'Axonaut · '+f.ref:'Saisie manuelle',from:f.from,to:f.to,vendues:Math.round(+f.vendues*60),slots:[]});logA('Chantier ponctuel créé : '+f.libelle);toast('Chantier créé : affecte maintenant une équipe');});}
+function slotModal(cid){const c=S.chantiers.find(x=>x.id===cid);
+ modal('<h3>Affecter au chantier</h3><div class="muted">'+esc(c.libelle)+' — '+esc(c.client)+'</div><label>Salariés (Ctrl / Cmd pour en choisir plusieurs)</label><select name="emps" multiple size="6" required>'+opts(EMPS.map(e=>[e.id,fullName(e.id)]))+'</select><label>Date</label><input type="date" name="date" required value="'+(c.from&&c.from>TODAY?c.from:TODAY)+'"><div class="row"><div style="flex:1"><label>Début</label><input type="time" name="s" required value="08:00"></div><div style="flex:1"><label>Fin</label><input type="time" name="e" required value="12:00"></div></div><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">Affecter</button></div>',
+ (f,btn,ev)=>{const sel=[...modalEl.querySelector('select[name=emps]').selectedOptions].map(o=>o.value);if(!sel.length){toast('Choisis au moins un salarié');return false;}if(toMin(f.e)<=toMin(f.s)){toast('Fin avant le début');return false;}
+  sel.forEach(emp=>{c.slots.push({emp,date:f.date,s:f.s,e:f.e});if(S.genWeeks.includes(mondayOf(f.date)))addIv({id:'p_'+c.id+'_'+emp+'_'+f.date+'_'+f.s.replace(':',''),emp,site:c.site,date:f.date,ps:f.s,pe:f.e,source:'ponctuel',chantier:c.id});});
+  logA('Affectation chantier '+c.libelle+' le '+f.date+' : '+sel.map(fullName).join(', '));toast(sel.length+' salarié(s) affecté(s)');});}
+function typesView(){
+ const pv=pvState();
+ let h='<div class="card"><div class="row" style="justify-content:space-between"><div><h2>Plannings types</h2><div class="sub" style="margin:0">Affectations récurrentes sur les chantiers sous contrat. Elles génèrent automatiquement les interventions. Une modification s\'applique à partir d\'aujourd\'hui ; les jours déjà pointés ne bougent pas.</div></div><div class="row"><select id="tyEmp">'+opts([['all','Tous les salariés']].concat(EMPS.map(e=>[e.id,fullName(e.id)])),S.tyEmp||'all')+'</select><button class="pri" data-addtype="">+ Affectation</button></div></div></div>';
+ EMPS.filter(e=>!S.tyEmp||S.tyEmp==='all'||e.id===S.tyEmp).forEach(e=>{const ts=S.types.filter(t=>t.emp===e.id).sort((a,b)=>a.site.localeCompare(b.site)||a.s.localeCompare(b.s));const c=CT(e.id);const pA=typesWeekMin(e.id,'A'),pB=typesWeekMin(e.id,'B');
+  h+='<div class="card"><div class="row" style="justify-content:space-between"><div><b>'+esc(e.prenom+' '+e.nom)+'</b> <span class="small muted">'+contractLabel(e.id)+'</span></div><div class="small tot">Planifié : sem. A <b class="'+(pA>c.hA*60?'over':'')+'">'+fmtD(pA)+'</b>'+(c.alt||S.types.some(t=>t.emp===e.id&&t.wk!=='all')?' · sem. B <b class="'+(pB>(c.alt?c.hB:c.hA)*60?'over':'')+'">'+fmtD(pB)+'</b>':'')+' <button class="sm" data-addtype="'+e.id+'">+</button></div></div>';
+  h+=ts.length?'<table style="margin-top:8px"><thead><tr><th>Chantier</th><th>Jours</th><th>Horaire</th><th>Semaines</th><th class="num">Durée / sem.</th><th></th></tr></thead><tbody>'+ts.map(t=>'<tr><td>'+esc(t.site)+'</td><td>'+t.days.map(d=>JJ[d]).join(' ')+'</td><td>'+hfr(t.s)+'–'+hfr(t.e)+'</td><td>'+(t.wk==='all'?'Toutes':'<span class="pill st-en_cours">Semaine '+t.wk+'</span>')+'</td><td class="num">'+fmtD(dur(t.s,t.e)*t.days.length)+'</td><td><button class="sm" data-edittype="'+t.id+'">Modifier</button></td></tr>').join('')+'</tbody></table>':'<div class="small muted" style="margin-top:6px">Aucune affectation récurrente.</div>';
+  h+='</div>';});
+ return h;
+}
+function typeModal(id,emp){const t=id?S.types.find(x=>x.id===id):null;
+ const sites=S.contrats.filter(c=>c.actif!==false).map(c=>c.nom).concat(['Bureau / contrôles']);
+ modal('<h3>'+(t?'Affectation récurrente':'Nouvelle affectation récurrente')+'</h3><label>Salarié</label><select name="emp">'+opts(EMPS.map(e=>[e.id,fullName(e.id)]),t?t.emp:(emp||EMPS[0].id))+'</select><label>Chantier sous contrat</label><select name="site">'+opts(sites,t?t.site:sites[0])+'</select><label>Jours</label><div class="row">'+[1,2,3,4,5,6,7].map(d=>'<label style="display:flex;gap:4px;align-items:center;margin:0;color:var(--ink)"><input type="checkbox" name="d'+d+'" style="width:auto" '+(t&&t.days.includes(d)?'checked':'')+'>'+JJ[d]+'</label>').join('')+'</div><div class="row"><div style="flex:1"><label>Début</label><input type="time" name="s" required value="'+(t?t.s:'06:00')+'"></div><div style="flex:1"><label>Fin</label><input type="time" name="e" required value="'+(t?t.e:'08:00')+'"></div></div><label>Semaines</label><select name="wk">'+opts([['all','Toutes les semaines'],['A','Semaine A uniquement'],['B','Semaine B uniquement']],t?t.wk:'all')+'</select><div class="acts">'+(t?'<button type="submit" class="bad" value="del">Supprimer</button>':'')+'<button type="button" data-close>Annuler</button><button class="pri" type="submit" value="save">Enregistrer</button></div>',
+ (f,btn)=>{if(btn==='del'){S.types=S.types.filter(x=>x!==t);regenFuture();logA('Affectation supprimée '+fullName(t.emp)+' '+t.site);toast('Affectation supprimée, planning mis à jour');return;}
+  const days=[1,2,3,4,5,6,7].filter(d=>f['d'+d]);if(!days.length){toast('Choisis au moins un jour');return false;}if(toMin(f.e)<=toMin(f.s)){toast('Fin avant le début');return false;}
+  const o={emp:f.emp,site:f.site,days,s:f.s,e:f.e,wk:f.wk};if(t)Object.assign(t,o);else S.types.push(Object.assign({id:uid('t')},o));
+  regenFuture();logA('Affectation '+(t?'modifiée':'ajoutée')+' '+fullName(f.emp)+' '+f.site);toast('Planning mis à jour à partir d\'aujourd\'hui');});}
+
+/* ====== Rôles ====== */
+function canValidateChef(iv){return S.role==='chef'&&EMP[iv.emp].chef===S.who&&iv.emp!==S.who;}
+const isManager=()=>S.role==='admin'||S.role==='gest';
+
+/* ====== Alertes ====== */
+function alerts(){
+ const out=[];const nm=nowMin();
+ const miss=S.ivs.filter(i=>dispStatus(i)==='manquant');
+ const pend=S.ivs.filter(i=>['ecart','validee_chef'].includes(i.status));
+ miss.filter(i=>i.date===TODAY).forEach(i=>out.push({lvl:'bad',t:'Pointage manquant — '+fullName(i.emp),d:i.site+' · prévu '+hfr(i.ps)+'–'+hfr(i.pe)+' aujourd\'hui',iv:i.id}));
+ const oldMiss=miss.filter(i=>i.date<TODAY);if(oldMiss.length)out.push({lvl:'bad',t:oldMiss.length+' intervention(s) passée(s) jamais pointée(s)',d:'À régulariser avant la clôture du mois',tab:'planning'});
+ pend.forEach(i=>out.push({lvl:'warn',t:'Écart à arbitrer — '+fullName(i.emp)+(EMP[i.emp].role==='chef'?' (chef d\'équipe : arbitrage direct niveau 2)':''),d:dlabel(i.date)+' · '+i.site+' · prévu '+fmtD(plannedMin(i))+', pointé '+fmtD(realMin(i))+' · '+(i.motif||''),tab:'valid'}));
+ EMPS.forEach(e=>{const w=wk(e.id,S.week);
+  if(hebdoW(e.id,S.week)<35){const lim=plafondMin(e,S.week);const over=w.planned-w.contract;
+   if(w.planned>=35*60)out.push({lvl:'bad',t:'Temps partiel planifié à 35 h ou plus — '+fullName(e.id),d:'Interdit : réduire le planning de la semaine'});
+   else if(over>lim)out.push({lvl:'bad',t:'Planning au-delà du plafond d\'heures complémentaires — '+fullName(e.id),d:'Prévu '+fmtD(w.planned)+' pour un contrat de '+fmtD(w.contract)+' (plafond '+S.params.plafond+' = '+fmtD(lim)+') · semaine du '+dlabel(S.week)});
+   else if(over>0&&over>=0.8*lim)out.push({lvl:'warn',t:'Plafond d\'heures complémentaires presque atteint — '+fullName(e.id),d:'Prévu '+fmtD(w.planned)+' / contrat '+fmtD(w.contract)+' · plafond '+fmtD(lim)});
+  } else if(w.planned>35*60)out.push({lvl:'warn',t:'Heures supplémentaires prévues — '+fullName(e.id),d:'Prévu '+fmtD(w.planned)+' cette semaine'});
+  if(w.planned>48*60)out.push({lvl:'bad',t:'Durée maximale hebdomadaire dépassée — '+fullName(e.id),d:'48 h max'});
+ });
+ S.chantiers.forEach(c=>{const st=chantierStats(c);if(st.tot>=0.8*c.vendues)out.push({lvl:st.tot>c.vendues?'bad':'warn',t:'Chantier ponctuel « '+c.libelle+' » : '+Math.round(st.tot/c.vendues*100)+' % des heures vendues',d:'Réalisé '+fmtD(st.done)+' + prévu '+fmtD(st.plan)+' pour '+fmtD(c.vendues)+' vendues',tab:'chantiers'});});
+ return out;
+}
+
+/* ====== Actions ====== */
+function toast(msg){document.querySelectorAll('.toast').forEach(x=>x.remove());const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2200);}
+function logA(txt){S.log.push({id:uid('l'),at:new Date().toLocaleString('fr-FR'),by:USER?USER.name:actorName(),txt});}
+function actorName(){if(S.role==='admin')return 'Gérome';if(S.role==='gest')return 'Marthe';return EMP[S.who]?fullName(S.who):'?';}
+function evaluate(iv){
+ const diff=realMin(iv)-plannedMin(iv);
+ iv.status=Math.abs(diff)>S.params.tol?'ecart':'validee';
+ if(iv.status==='validee'){iv.decision=null;}
+}
+function act(a,id,extra){
+ const iv=S.ivs.find(x=>x.id===id);
+ const hm=toHHMM(nowMin());
+ switch(a){
+  case 'arrive':iv.rs=hm;iv.status='en_cours';logA('Arrivée '+fullName(iv.emp)+' '+iv.site+' '+hm);toast('Arrivée enregistrée à '+hfr(hm));break;
+  case 'parti':if(!iv.rs)iv.rs=iv.ps;iv.re=hm;if(toMin(iv.re)<=toMin(iv.rs))iv.re=toHHMM(toMin(iv.rs)+1);evaluate(iv);logA('Départ '+fullName(iv.emp)+' '+iv.site+' '+hm);toast(iv.status==='ecart'?'Départ enregistré — écart signalé':'Départ enregistré');break;
+  case 'asplanned':iv.rs=iv.ps;iv.re=iv.pe;iv.status='validee';iv.decision=null;iv.motif='';logA('Fait comme prévu '+fullName(iv.emp)+' '+iv.site+' '+iv.date);toast('Merci, c\'est noté');break;
+  case 'chefok':iv.status='validee_chef';iv.chefBy=EMP[S.who].prenom;logA('Validation chef '+fullName(iv.emp)+' '+iv.date);toast('Validé, transmis à Marthe / Gérome');break;
+  case 'payee':case 'recup':iv.status='validee';iv.decision=a;iv.validBy=actorName();logA('Extra accepté ('+(a==='payee'?'payé':'récupération')+') '+fullName(iv.emp)+' '+iv.date);toast('Accepté : '+(a==='payee'?'payé':'mis en récupération'));break;
+  case 'accept-short':iv.status='validee';iv.decision=null;iv.validBy=actorName();logA('Écart validé '+fullName(iv.emp)+' '+iv.date);toast('Validé');break;
+  case 'refuse':iv.status='refusee';iv.validBy=actorName();logA('Extra refusé '+fullName(iv.emp)+' '+iv.date);toast('Refusé : seules les heures prévues sont retenues');break;
+ }
+ save();render();
+}
+
+/* ====== Modales ====== */
+let modalEl=null;
+function closeModal(){if(modalEl){modalEl.remove();modalEl=null;}if(rerenderPending){rerenderPending=false;render();}}
+function modal(html,onSubmit){closeModal();modalEl=document.createElement('div');modalEl.className='modal-bg';modalEl.innerHTML='<form class="modal">'+html+'</form>';document.body.appendChild(modalEl);
+ const f=modalEl.querySelector('form');f.addEventListener('submit',ev=>{ev.preventDefault();const data=Object.fromEntries(new FormData(f).entries());if(onSubmit(data,ev.submitter&&ev.submitter.value)!==false){closeModal();save();render();}});
+ modalEl.addEventListener('click',ev=>{if(ev.target===modalEl||ev.target.dataset.close!==undefined)closeModal();});}
+const opts=(arr,sel)=>arr.map(o=>{const v=Array.isArray(o)?o[0]:o,l=Array.isArray(o)?o[1]:o;return '<option value="'+esc(v)+'"'+(v===sel?' selected':'')+'>'+esc(l)+'</option>';}).join('');
+function ecartModal(id){const iv=S.ivs.find(x=>x.id===id);
+ modal('<h3>Signaler un écart</h3><div class="muted">'+esc(iv.site)+' · prévu '+hfr(iv.ps)+'–'+hfr(iv.pe)+'</div><label>Heure d\'arrivée réelle</label><input type="time" name="rs" required value="'+(iv.rs||iv.ps)+'"><label>Heure de départ réelle</label><input type="time" name="re" required value="'+(iv.re||iv.pe)+'"><label>Motif</label><select name="motif">'+opts(MOTIFS)+'</select><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">Envoyer</button></div>',
+ d=>{if(toMin(d.re)<=toMin(d.rs)){toast('L\'heure de départ doit être après l\'arrivée');return false;}iv.rs=d.rs;iv.re=d.re;iv.motif=d.motif;evaluate(iv);logA('Écart déclaré '+fullName(iv.emp)+' '+iv.date+' '+d.rs+'-'+d.re);toast(iv.status==='ecart'?'Écart envoyé pour validation':'Dans la tolérance : validé');});}
+function ivModal(id,emp,date){
+ const iv=id?S.ivs.find(x=>x.id===id):null;
+ const e=iv?iv.emp:emp,d=iv?iv.date:date;
+ const st=iv?dispStatus(iv):null;
+ modal('<h3>'+(iv?'Intervention':'Nouvelle intervention')+'</h3><div class="muted">'+esc(fullName(e))+' · '+dlong(d)+(iv&&iv.chantier?' · chantier ponctuel':'')+'</div>'+
+ (iv?'<div style="margin-top:8px"><span class="pill st-'+st+'">'+ST_LABEL[st]+'</span>'+(iv.motif?' <span class="small muted">Motif : '+esc(iv.motif)+'</span>':'')+(iv.decision?' <span class="small muted">· '+(iv.decision==='payee'?'extra payé':'extra en récupération')+'</span>':'')+'</div>':'')+
+ '<label>Site</label><select name="site">'+opts(siteList().concat(iv&&!siteList().includes(iv.site)?[iv.site]:[]),iv?iv.site:siteList()[0])+'</select>'+
+ '<div class="row"><div style="flex:1"><label>Début prévu</label><input type="time" name="ps" required value="'+(iv?iv.ps:'06:00')+'"></div><div style="flex:1"><label>Fin prévue</label><input type="time" name="pe" required value="'+(iv?iv.pe:'08:00')+'"></div></div>'+
+ '<div class="row"><div style="flex:1"><label>Arrivée pointée</label><input type="time" name="rs" value="'+(iv&&iv.rs?iv.rs:'')+'"></div><div style="flex:1"><label>Départ pointé</label><input type="time" name="re" value="'+(iv&&iv.re?iv.re:'')+'"></div></div>'+
+ '<div class="small muted" style="margin-top:6px">Saisie du pointage pour le compte du salarié (tracée au journal).</div>'+
+ '<div class="acts">'+(iv?'<button type="submit" class="bad" value="del">Supprimer</button>':'')+'<button type="button" data-close>Annuler</button><button class="pri" type="submit" value="save">Enregistrer</button></div>',
+ (f,btn)=>{
+  if(btn==='del'){S.ivs=S.ivs.filter(x=>x!==iv);logA('Intervention supprimée '+fullName(e)+' '+d);return;}
+  if(toMin(f.pe)<=toMin(f.ps)){toast('Fin prévue avant le début');return false;}
+  const target=iv||addIv({emp:e,date:d,site:f.site,ps:f.ps,pe:f.pe,source:'manuel'});
+  target.site=f.site;target.ps=f.ps;target.pe=f.pe;
+  if(f.rs&&f.re){if(toMin(f.re)<=toMin(f.rs)){toast('Départ avant l\'arrivée');return false;}const changed=target.rs!==f.rs||target.re!==f.re;target.rs=f.rs;target.re=f.re;if(changed||target.status==='prevue')evaluate(target);}
+  else{target.rs=null;target.re=null;target.status='prevue';}
+  logA((iv?'Intervention modifiée ':'Intervention ajoutée ')+fullName(e)+' '+d+' '+f.site);
+ });}
+function absModal(emp){
+ modal('<h3>Saisir une absence</h3><label>Salarié</label><select name="emp">'+opts(EMPS.map(e=>[e.id,fullName(e.id)]),emp)+'</select><label>Motif</label><select name="code">'+opts(Object.entries(ABS_CODES).map(([k,v])=>[k,k+' — '+v]))+'</select><div class="row"><div style="flex:1"><label>Du</label><input type="date" name="from" required value="'+S.week+'"></div><div style="flex:1"><label>Au</label><input type="date" name="to" required value="'+S.week+'"></div></div><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">Enregistrer</button></div>',
+ f=>{if(f.to<f.from){toast('Dates incohérentes');return false;}S.abs.push({id:uid('a'),emp:f.emp,code:f.code,from:f.from,to:f.to});logA('Absence '+f.code+' '+fullName(f.emp)+' du '+f.from+' au '+f.to);toast('Absence enregistrée');});}
+function decideModal(id){const iv=S.ivs.find(x=>x.id===id);const ex=extraMin(iv);
+ modal('<h3>Arbitrer l\'écart</h3><div><b>'+esc(fullName(iv.emp))+'</b> · '+dlong(iv.date)+'</div><div class="muted small">'+esc(iv.site)+'</div><table style="margin:10px 0"><tr><td>Prévu</td><td class="num">'+hfr(iv.ps)+'–'+hfr(iv.pe)+'</td><td class="num">'+fmtD(plannedMin(iv))+'</td></tr><tr><td>Pointé</td><td class="num">'+hfr(iv.rs)+'–'+hfr(iv.re)+'</td><td class="num">'+fmtD(realMin(iv))+'</td></tr><tr><td><b>Écart</b></td><td></td><td class="num"><b>'+fmtD(realMin(iv)-plannedMin(iv))+'</b></td></tr></table><div class="small">Motif : '+esc(iv.motif||'—')+(iv.chefBy?' · validé par le chef ('+esc(iv.chefBy)+')':'')+'</div>'+
+ (ex>0?'<div class="small muted" style="margin-top:8px">Les '+fmtD(ex)+' en plus deviennent des heures '+(hebdoW(iv.emp,mondayOf(iv.date))<35?'complémentaires':'supplémentaires')+' si elles dépassent le contrat de la semaine.</div><div class="acts"><button type="submit" value="refuse" class="bad">Refuser l\'extra</button><button type="submit" value="recup">Accepter · récupération</button><button type="submit" value="payee" class="ok">Accepter · payé</button></div>':'<div class="acts"><button type="button" data-close>Plus tard</button><button type="submit" value="accept-short" class="ok">Valider les heures pointées</button></div>'),
+ (f,btn)=>{closeModal();act(btn,id);return false;});}
+
+/* ====== Rendu ====== */
+const app=document.getElementById('app');
+function header(){
+ const o=[['admin|'+USER.login,'Administrateur · '+USER.name],['gest|marthe','Aperçu gestionnaire']].concat((S.emps||[]).filter(e=>e.role==='chef'&&e.actif!==false).map(e=>['chef|'+e.id,'Aperçu chef · '+e.prenom])).concat(EMPS.filter(e=>e.role!=='chef').map(e=>['sal|'+e.id,'Aperçu salarié · '+fullName(e.id)]));
+ return '<header><div class="logo"><img src="/logo.png" alt="Socanet Services"><span>Planning & pointage</span></div><div class="sp"></div><span id="syncState" class="sync s-'+SYNC_STATE+'">● Enregistré</span>'+(USER.role==='admin'?'<select id="roleSel">'+opts(o,S.role+'|'+S.who)+'</select>':'<span class="small muted">'+esc(USER.name)+'</span>')+(isMgrUser()?'<button id="pwdBtn">Mot de passe</button>':'')+'<button id="logoutBtn">Déconnexion</button></header>';
+}
+function render(){
+ let h=header();
+ if(isManager())h+=managerView();else h+='<main>'+phoneView()+'</main>';
+ app.innerHTML=h;
+}
+/* --- Vue gestion --- */
+function managerView(){
+ const al=alerts();const pend=S.ivs.filter(i=>['ecart','validee_chef'].includes(i.status)).length;
+ const tabs=[['dash','Tableau de bord',al.filter(a=>a.lvl==='bad').length],['planning','Planning'],['valid','Validation',pend],['pointage','Pointage'],['chantiers','Chantiers'],['types','Plannings types'],['contrats','Salariés & forfaits'],['export','Clôture & exports'],['journal','Journal']];
+ if(S.role==='admin')tabs.push(['params','Paramètres']);
+ if(!tabs.find(t=>t[0]===S.tab))S.tab='dash';
+ let h='<nav class="tabs">'+tabs.map(t=>'<button data-tab="'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'">'+t[1]+(t[2]?'<span class="badge">'+t[2]+'</span>':'')+'</button>').join('')+'</nav><main>';
+ h+=({dash:dashView,planning:planningView,valid:validView,pointage:pointageView,chantiers:chantiersView,types:typesView,contrats:contratsView,export:exportView,journal:journalView,params:paramsView})[S.tab](al);
+ return h+'</main>';
+}
+function weekNav(){const end=addDays(S.week,6);return '<div class="row" style="margin-bottom:12px"><button data-wk="-7">◀</button><b>Semaine '+weekAB(S.week)+' · du '+dlabel(S.week)+' au '+dlabel(end)+'</b><button data-wk="7">▶</button>'+(S.week!==W0?'<button data-wk="0">Cette semaine</button>':'')+'</div>';}
+function dashView(al){
+ const todayIvs=S.ivs.filter(i=>i.date===TODAY&&!absOf(i.emp,i.date));
+ const done=todayIvs.filter(i=>['validee','ecart','validee_chef','refusee'].includes(i.status)).length;
+ const miss=todayIvs.filter(i=>dispStatus(i)==='manquant').length;
+ const pend=S.ivs.filter(i=>['ecart','validee_chef'].includes(i.status)).length;
+ let extraW=0;EMPS.forEach(e=>{const w=wk(e.id,S.week);extraW+=w.c10+w.c25+w.s25+w.s50;});
+ let h='';
+ h+='<div class="grid4"><div class="kpi ok"><div class="n">'+done+' / '+todayIvs.length+'</div><div class="l">interventions pointées aujourd\'hui</div></div><div class="kpi '+(miss?'bad':'ok')+'"><div class="n">'+miss+'</div><div class="l">pointages manquants aujourd\'hui</div></div><div class="kpi '+(pend?'warn':'ok')+'"><div class="n">'+pend+'</div><div class="l">écarts à arbitrer</div></div><div class="kpi"><div class="n">'+fmtD(extraW)+'</div><div class="l">heures compl./supp. validées (semaine affichée)</div></div></div>';
+ h+='<div class="card"><h2>Alertes</h2><div class="sub">Ce qui demande une action avant que ça n\'arrive en paie. Semaine de référence pour les contrats : '+dlabel(S.week)+'.</div>';
+ h+=al.length?al.map(a=>'<div class="alert '+a.lvl+'"><div style="flex:1"><div class="t">'+esc(a.t)+'</div><div class="d">'+esc(a.d)+'</div></div>'+(a.iv?'<button class="sm" data-editiv="'+a.iv+'">Pointer pour lui</button>':'')+(a.tab?'<button class="sm" data-tab="'+a.tab+'">Voir</button>':'')+'</div>').join(''):'<div class="muted">Rien à signaler.</div>';
+ return h+'</div>';
+}
+const monthStart=s=>s.slice(0,8)+'01';
+const addMonths=(s,n)=>{const d=parseYmd(monthStart(s));d.setMonth(d.getMonth()+n);return ymd(d);};
+const monthEnd=s=>addDays(addMonths(s,1),-1);
+function pvState(){if(!S.pv)S.pv={mode:'week',emp:'all',team:'all',site:'all'};if(!S.pv.orient)S.pv.orient='rows';if(!S.pv.detail)S.pv.detail='full';if(!S.pmonth)S.pmonth=monthStart(TODAY);return S.pv;}
+function pvPeriod(){const pv=pvState();if(pv.mode==='week')return [S.week,addDays(S.week,6)];if(pv.mode==='month')return [S.pmonth,monthEnd(S.pmonth)];return [S.pmonth,monthEnd(addMonths(S.pmonth,2))];}
+function pvEmps(){const pv=pvState();return EMPS.filter(e=>(pv.emp==='all'||e.id===pv.emp)&&(pv.team==='all'||e.chef===pv.team||e.id===pv.team));}
+const pvSiteOk=i=>{const pv=pvState();return pv.site==='all'||i.site===pv.site;};
+function daysIn(a,b){const out=[];for(let d=a;d<=b;d=addDays(d,1))out.push(d);return out;}
+function ensureRange(a,b){let ch=false;for(let w=mondayOf(a);w<=b;w=addDays(w,7))if(!S.genWeeks.includes(w)){genWeek(w);ch=true;}if(ch)save();}
+function chipHtml(i){const st=dispStatus(i);return '<span class="chip c-'+st+(i.chantier?' c-ponct':'')+'" data-editiv="'+i.id+'" title="'+ST_LABEL[st]+'"><b>'+esc(i.site)+'</b><br>'+hfr(i.ps)+'–'+hfr(i.pe)+(i.rs&&i.re&&(i.rs!==i.ps||i.re!==i.pe)?'<br><span class="small">pointé '+hfr(i.rs)+'–'+hfr(i.re)+'</span>':'')+'</span>';}
+function dayIvs(emp,d){return S.ivs.filter(i=>i.emp===emp&&i.date===d&&pvSiteOk(i)).sort((a,b)=>a.ps.localeCompare(b.ps));}
+function periodTotals(emp,days){let pl=0,real=0;days.forEach(d=>{if(absOf(emp,d))return;S.ivs.filter(i=>i.emp===emp&&i.date===d&&pvSiteOk(i)).forEach(i=>{pl+=plannedMin(i);real+=counted(i);});});return {pl,real,contract:Math.round(days.reduce((a,d)=>a+hebdoW(emp,mondayOf(d))*60/7,0))};}
+function pvToolbar(){
+ const pv=pvState();const [a,b]=pvPeriod();
+ const modes=[['week','Semaine'],['month','Mois'],['quarter','3 mois']];
+ let label;
+ if(pv.mode==='week')label='Semaine '+weekAB(a)+' · du '+dlabel(a)+' au '+dlabel(b);
+ else{const d1=parseYmd(a),d2=parseYmd(b);label=pv.mode==='month'?MOIS[d1.getMonth()]+' '+d1.getFullYear():MOIS[d1.getMonth()]+' → '+MOIS[d2.getMonth()]+' '+d2.getFullYear();label=label.charAt(0).toUpperCase()+label.slice(1);}
+ const navAttr=pv.mode==='week'?'data-wk':'data-pnav';const step=pv.mode==='week'?7:(pv.mode==='month'?1:3);
+ return '<div class="card" style="padding:12px 14px"><div class="row" style="justify-content:space-between;gap:12px">'+
+ '<div class="row"><div class="seg">'+modes.map(m=>'<button data-pmode="'+m[0]+'" class="'+(pv.mode===m[0]?'on':'')+'">'+m[1]+'</button>').join('')+'</div>'+
+ '<div class="seg" title="Affichage"><button data-detail="full" class="'+(pv.detail==='full'?'on':'')+'">Chantiers + heures</button><button data-detail="hours" class="'+(pv.detail==='hours'?'on':'')+'">Heures seules</button></div><div class="seg" title="Disposition"><button data-orient="rows" class="'+(pv.orient==='rows'?'on':'')+'">Noms à gauche</button><button data-orient="cols" class="'+(pv.orient==='cols'?'on':'')+'">Noms en haut</button></div><button '+navAttr+'="-'+step+'">◀</button><b style="min-width:220px;text-align:center">'+label+'</b><button '+navAttr+'="'+step+'">▶</button><button '+navAttr+'="0">Aujourd\'hui</button></div>'+
+ '<div class="row"><select id="pvEmp">'+opts([['all','Toutes les personnes']].concat(EMPS.map(e=>[e.id,e.prenom+' '+e.nom])),pv.emp)+'</select>'+
+ '<select id="pvTeam">'+opts([['all','Toutes les équipes'],['bonose','Équipe Julien'],['lamasine','Équipe Jérémy']],pv.team)+'</select>'+
+ '<select id="pvSite">'+opts([['all','Tous les sites']].concat(siteList().map(s=>[s,s])),pv.site)+'</select>'+
+ ((pv.emp!=='all'||pv.team!=='all'||pv.site!=='all')?'<button data-pvreset>Effacer les filtres</button>':'')+'<button class="pri" data-absadd="">+ Absence</button></div></div></div>';
+}
+function planningView(){
+ const pv=pvState();const [a,b]=pvPeriod();ensureRange(a,b);
+ const emps=pvEmps();const days=daysIn(a,b);
+ let h=pvToolbar();
+ h+='<div class="legend">'+['validee','ecart','manquant','en_cours','prevue','refusee','absent'].map(s=>'<span class="pill st-'+s+'">'+ST_LABEL[s]+'</span>').join('')+'<span class="pill" style="box-shadow:inset 0 0 0 1px #7c5cd6">chantier ponctuel</span><span class="pill" style="background:#fff9db">jour férié</span></div>';
+ if(!emps.length)return h+'<div class="card muted">Aucune personne ne correspond aux filtres.</div>';
+ if(pv.mode==='week'&&pv.detail==='hours')h+=pv.orient==='cols'?compactGridT(emps,days,true):compactGrid(emps,days,true);
+ else if(pv.mode==='week')h+=pv.orient==='cols'?weekGridT(emps,days):weekGrid(emps,days);
+ else if(emps.length===1)h+=calendarView(emps[0],a,b);
+ else h+=pv.orient==='cols'?compactGridT(emps,days):compactGrid(emps,days);
+ const absList=S.abs.filter(x=>x.to>=a&&x.from<=b&&emps.some(e=>e.id===x.emp));
+ if(absList.length)h+='<div class="card"><h2>Absences sur la période</h2><table>'+absList.map(x=>'<tr><td>'+esc(fullName(x.emp))+'</td><td><span class="pill st-absent">'+x.code+'</span> '+esc(ABS_CODES[x.code])+'</td><td>du '+dlabel(x.from)+' au '+dlabel(x.to)+'</td><td><button class="sm" data-delabs="'+x.id+'">Supprimer</button></td></tr>').join('')+'</table></div>';
+ return h;
+}
+function pvEmpsShown(emps,days){const pv=pvState();if(pv.site==='all')return emps;return emps.filter(e=>days.some(d=>dayIvs(e.id,d).length));}
+function empHead(e,w){return '<b>'+esc(e.prenom)+'</b><br>'+esc(e.nom)+'<div class="small muted" style="font-weight:400">'+contractLabel(e.id,w)+'</div>';}
+function weekGridT(emps,days){
+ emps=pvEmpsShown(emps,days);
+ let h='<div class="small muted" style="margin-bottom:8px">Clique sur une intervention pour la modifier ou pointer à la place du salarié · « + » pour ajouter une intervention ponctuelle.</div>';
+ h+='<div class="card scroll" style="padding:0;max-height:78vh"><table class="plan planT"><thead><tr><th class="name">Date</th>'+emps.map(e=>'<th class="ehead">'+empHead(e,days[0])+'</th>').join('')+'</tr></thead><tbody>';
+ days.forEach(d=>{const dd=parseYmd(d);const cls=isFer(d)?'fer':((dd.getDay()%6===0)?'wk':'');
+  h+='<tr><td class="name '+cls+'">'+JOURSL[dd.getDay()].charAt(0).toUpperCase()+JOURSL[dd.getDay()].slice(1)+' '+dd.getDate()+(isFer(d)?'<div class="small muted">férié</div>':'')+(d===TODAY?'<div class="small" style="color:var(--brand)">aujourd\'hui</div>':'')+'</td>';
+  emps.forEach(e=>{const ab=absOf(e.id,d);h+='<td class="'+cls+'">';if(ab)h+='<span class="chip c-abs"><b>'+ab+'</b> '+esc(ABS_CODES[ab])+'</span>';else{dayIvs(e.id,d).forEach(i=>h+=chipHtml(i));h+='<div class="add" data-addiv="'+e.id+'|'+d+'">+</div>';}h+='</td>';});
+  h+='</tr>';});
+ h+='<tr class="totrow"><td class="name">Prévu / contrat</td>'+emps.map(e=>{const w=wk(e.id,days[0]);const hw=hebdoW(e.id,days[0]);const lim=hw<35?plafondMin(e,days[0]):0;const over=hw<35?(w.planned-w.contract>lim):(w.planned>35*60);return '<td class="num tot '+(over?'over':'')+'">'+fmtD(w.planned)+' / '+fmtD(w.contract)+'</td>';}).join('')+'</tr>';
+ return h+'</tbody></table></div>';
+}
+function dayModal(emp,d){const ab=absOf(emp,d);const ivs=S.ivs.filter(i=>i.emp===emp&&i.date===d).sort((a,b)=>a.ps.localeCompare(b.ps));
+ modal('<h3>'+esc(fullName(emp))+'</h3><div class="muted">'+dlong(d)+'</div><div style="margin-top:10px">'+(ab?'<span class="chip c-abs"><b>'+ab+'</b> '+esc(ABS_CODES[ab])+'</span>':(ivs.map(chipHtml).join('')||'<div class="muted">Aucune intervention.</div>'))+'</div><div class="small muted" style="margin-top:6px">Total : '+fmtD(ivs.reduce((a,i)=>a+(i.rs&&i.re?counted(i):plannedMin(i)),0))+'</div><div class="acts">'+(ab?'':'<button type="button" data-addiv="'+emp+'|'+d+'">+ Intervention</button>')+'<button type="button" class="pri" data-close>Fermer</button></div>',()=>{});
+ modalEl.addEventListener('click',ev=>{const c=ev.target.closest('[data-editiv],[data-addiv]');if(!c)return;if(c.dataset.editiv)ivModal(c.dataset.editiv);else{const [e2,d2]=c.dataset.addiv.split('|');ivModal(null,e2,d2);}});}
+function compactGridT(emps,days,big){
+ emps=pvEmpsShown(emps,days);
+ let h='<div class="small muted" style="margin-bottom:8px">Heures par jour (réalisées si pointées, sinon prévues). Survole une case pour voir les chantiers, clique pour ouvrir le détail.'+(big?' Les heures sont en décimal (1,50 = 1 h 30).':'')+'</div>';
+ h+='<div class="card scroll" style="padding:0;max-height:80vh"><table class="cgrid cgridT'+(big?' cbig':'')+'"><thead><tr><th class="name">Date</th>'+emps.map(e=>'<th class="ehead">'+esc(e.prenom)+'<br>'+esc(e.nom)+'</th>').join('')+'</tr></thead><tbody>';
+ let curM='';
+ days.forEach(d=>{const dd=parseYmd(d);const m=d.slice(0,7);
+  if(m!==curM){curM=m;h+='<tr><td class="mrow" colspan="'+(emps.length+1)+'">'+MOIS[dd.getMonth()]+' '+dd.getFullYear()+'</td></tr>';}
+  const base=(isFer(d)?'fer':(dd.getDay()%6===0?'wk':''))+(dd.getDay()===1?' monT':'');
+  h+='<tr><td class="name '+base+(d===TODAY?' tdyT':'')+'">'+'LMMJVSD'.charAt((dd.getDay()+6)%7)+' '+dd.getDate()+(isFer(d)?' · férié':'')+'</td>';
+  emps.forEach(e=>{const ab=absOf(e.id,d);if(ab)h+='<td class="'+base+'"><span class="cg cg-abs" title="'+esc(ABS_CODES[ab])+'">'+ab+'</span></td>';else{const c=cellClass(e.id,d);h+='<td class="'+base+'">'+(c.txt?'<span class="cg '+c.cls+'" data-gocell="'+e.id+'|'+d+'" title="'+esc(c.tip)+'">'+c.txt+'</span>':'')+'</td>';}});
+  h+='</tr>';});
+ h+='<tr class="totrow"><td class="name">Prévu</td>'+emps.map(e=>'<td class="num tot">'+fmtD(periodTotals(e.id,days).pl)+'</td>').join('')+'</tr>';
+ h+='<tr class="totrow"><td class="name">Réalisé / contrat</td>'+emps.map(e=>{const t=periodTotals(e.id,days);return '<td class="num tot '+(t.real>t.contract*1.1?'over':'')+'">'+fmtD(t.real)+'<br><span class="muted">/ '+fmtD(t.contract)+'</span></td>';}).join('')+'</tr>';
+ return h+'</tbody></table></div><div class="small muted">Contrat ramené à la période (horaire hebdo × nombre de jours / 7).</div>';
+}
+function weekGrid(emps,days){
+ const pv=pvState();
+ let h='<div class="small muted" style="margin-bottom:8px">Clique sur une intervention pour la modifier ou pointer à la place du salarié · « + » pour ajouter une intervention ponctuelle.</div>';
+ h+='<div class="card scroll" style="padding:0;max-height:75vh"><table class="plan"><thead><tr><th class="name">Salarié</th>'+days.map(d=>'<th class="'+(isFer(d)?'fer':'')+'">'+dlabel(d)+(isFer(d)?' · férié':'')+(d===TODAY?' · auj.':'')+'</th>').join('')+'<th class="num">Prévu / contrat</th></tr></thead><tbody>';
+ emps.forEach(e=>{const w=wk(e.id,days[0]);const hw=hebdoW(e.id,days[0]);const lim=hw<35?plafondMin(e,days[0]):0;const over=hw<35?(w.planned-w.contract>lim):(w.planned>35*60);
+  const rowIvs=days.map(d=>dayIvs(e.id,d));if(pv.site!=='all'&&!rowIvs.some(x=>x.length))return;
+  h+='<tr><td class="name">'+esc(e.prenom+' '+e.nom)+'<div class="small muted" style="font-weight:400">'+contractLabel(e.id,days[0])+(e.role==='chef'?' · chef d\'équipe':'')+'</div></td>';
+  days.forEach((d,k)=>{const ab=absOf(e.id,d);
+   h+='<td class="'+(isFer(d)?'fer':((parseYmd(d).getDay()%6===0)?'wk':''))+'">';
+   if(ab)h+='<span class="chip c-abs"><b>'+ab+'</b> '+esc(ABS_CODES[ab])+'</span>';
+   else{rowIvs[k].forEach(i=>h+=chipHtml(i));h+='<div class="add" data-addiv="'+e.id+'|'+d+'">+</div>';}
+   h+='</td>';});
+  h+='<td class="num tot '+(over?'over':'')+'">'+fmtD(w.planned)+' / '+fmtD(w.contract)+'</td></tr>';});
+ return h+'</tbody></table></div>';
+}
+function cellClass(emp,d){const ivs=dayIvs(emp,d);if(!ivs.length)return {cls:'',txt:''};
+ const sts=ivs.map(dispStatus);let cls='cg-prev';
+ if(sts.includes('manquant'))cls='cg-miss';else if(sts.some(s=>s==='ecart'||s==='validee_chef'))cls='cg-ecart';else if(sts.includes('en_cours'))cls='cg-cours';else if(sts.every(s=>s==='validee'||s==='refusee'))cls='cg-ok';
+ const real=ivs.reduce((t,i)=>t+counted(i),0),pl=ivs.reduce((t,i)=>t+plannedMin(i),0);
+ const txt=(cls==='cg-prev'||cls==='cg-miss'||cls==='cg-cours')?dec(pl):dec(real);
+ return {cls:cls+(ivs.some(i=>i.chantier)?' cg-ponct':''),txt:txt.replace(',00',''),tip:ivs.map(i=>i.site+' '+hfr(i.ps)+'–'+hfr(i.pe)+' ('+ST_LABEL[dispStatus(i)]+')').join('\n')};}
+function compactGrid(emps,days,big){
+ const pv=pvState();
+ let h='<div class="small muted" style="margin-bottom:8px">Heures par jour (réalisées si pointées, sinon prévues). Survole une case pour voir les chantiers, clique pour ouvrir le détail.'+(big?' Les heures sont en décimal (1,50 = 1 h 30).':'')+'</div>';
+ // en-tête mois
+ const months=[];days.forEach(d=>{const m=d.slice(0,7);const last=months[months.length-1];if(!last||last.m!==m)months.push({m,n:1});else last.n++;});
+ h+='<div class="card scroll" style="padding:0;max-height:78vh"><table class="cgrid'+(big?' cbig':'')+'"><thead>';
+ if(months.length>1)h+='<tr><th class="name"></th>'+months.map(x=>{const d=parseYmd(x.m+'-01');return '<th colspan="'+x.n+'" class="mth">'+MOIS[d.getMonth()]+' '+d.getFullYear()+'</th>';}).join('')+'<th></th><th></th></tr>';
+ h+='<tr><th class="name">Salarié</th>'+days.map(d=>{const dd=parseYmd(d);return '<th class="dh '+(isFer(d)?'fer':(dd.getDay()%6===0?'wk':''))+(d===TODAY?' tdy':'')+(dd.getDay()===1?' mon':'')+'">'+'LMMJVSD'.charAt((dd.getDay()+6)%7)+'<br>'+dd.getDate()+'</th>';}).join('')+'<th class="num">Prévu</th><th class="num">Réalisé / contrat</th></tr></thead><tbody>';
+ emps.forEach(e=>{const t=periodTotals(e.id,days);if(pv.site!=='all'&&!t.pl)return;
+  h+='<tr><td class="name">'+esc(e.prenom+' '+e.nom)+'<div class="small muted" style="font-weight:400">'+contractLabel(e.id)+'</div></td>';
+  days.forEach(d=>{const dd=parseYmd(d);const ab=absOf(e.id,d);const base=(isFer(d)?'fer':(dd.getDay()%6===0?'wk':''))+(dd.getDay()===1?' mon':'');
+   if(ab)h+='<td class="'+base+'"><span class="cg cg-abs" title="'+esc(ABS_CODES[ab])+'">'+ab+'</span></td>';
+   else{const c=cellClass(e.id,d);h+='<td class="'+base+'">'+(c.txt?'<span class="cg '+c.cls+'" data-gocell="'+e.id+'|'+d+'" title="'+esc(c.tip)+'">'+c.txt+'</span>':'')+'</td>';}});
+  const over=t.real>t.contract*1.1;
+  h+='<td class="num tot">'+fmtD(t.pl)+'</td><td class="num tot '+(over?'over':'')+'">'+fmtD(t.real)+' / '+fmtD(t.contract)+'</td></tr>';});
+ return h+'</tbody></table></div><div class="small muted">Contrat ramené à la période (horaire hebdo × nombre de jours / 7).</div>';
+}
+function calendarView(e,a,b){
+ let h='<div class="small muted" style="margin-bottom:8px">Vue calendrier de '+esc(e.prenom+' '+e.nom)+' · clique sur une intervention pour la modifier, « + » pour en ajouter une.</div>';
+ for(let m=monthStart(a);m<=b;m=addMonths(m,1)){
+  const end=monthEnd(m);const d0=parseYmd(m);const t=periodTotals(e.id,daysIn(m,end));
+  h+='<div class="card"><div class="row" style="justify-content:space-between"><h2>'+MOIS[d0.getMonth()].charAt(0).toUpperCase()+MOIS[d0.getMonth()].slice(1)+' '+d0.getFullYear()+'</h2><div class="tot small">Prévu <b>'+fmtD(t.pl)+'</b> · Réalisé <b>'+fmtD(t.real)+'</b> · Contrat '+fmtD(t.contract)+'</div></div><div class="scroll"><table class="cal"><thead><tr>'+['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(x=>'<th>'+x+'</th>').join('')+'<th class="num">Semaine</th></tr></thead><tbody>';
+  for(let w=mondayOf(m);w<=end;w=addDays(w,7)){
+   h+='<tr>';let wkPl=0;
+   for(let k=0;k<7;k++){const d=addDays(w,k);const inM=d>=m&&d<=end;const ab=absOf(e.id,d);const ivs=dayIvs(e.id,d);if(!ab)ivs.forEach(i=>wkPl+=plannedMin(i));
+    h+='<td class="'+(inM?'':'out ')+(isFer(d)?'fer ':'')+(d===TODAY?'tdy':'')+'"><div class="dn">'+parseYmd(d).getDate()+(isFer(d)?' · férié':'')+'</div>';
+    if(inM){if(ab)h+='<span class="chip c-abs"><b>'+ab+'</b> '+esc(ABS_CODES[ab])+'</span>';else if(pvState().detail==='hours'){const c=cellClass(e.id,d);if(c.txt)h+='<span class="cg '+c.cls+'" style="font-size:15px;padding:8px 0" data-gocell="'+e.id+'|'+d+'" title="'+esc(c.tip)+'">'+c.txt+' h</span>';}else{ivs.forEach(i=>h+=chipHtml(i));h+='<div class="add" data-addiv="'+e.id+'|'+d+'">+</div>';}}
+    h+='</td>';}
+   const hw=hebdoW(e.id,w);const lim=hw<35?plafondMin(e,w):0;const over=hw<35?(wkPl-hw*60>lim):(wkPl>35*60);
+   h+='<td class="num tot '+(over?'over':'')+'">'+fmtD(wkPl)+(CT(e.id).alt?'<div class="small muted">sem. '+weekAB(w)+' · '+fh(hw)+' h</div>':'')+'</td></tr>';}
+  h+='</tbody></table></div></div>';}
+ return h;
+}
+function validView(){
+ const list=S.ivs.filter(i=>['ecart','validee_chef'].includes(i.status)).sort((a,b)=>a.date.localeCompare(b.date));
+ let h='<div class="card"><h2>Écarts à arbitrer</h2><div class="sub">Une heure en plus ne part en paie qu\'après ta décision : payée, mise en récupération ou refusée. Les écarts d\'un chef d\'équipe arrivent ici directement.</div>';
+ if(!list.length)h+='<div class="muted">Aucun écart en attente.</div>';
+ else h+='<div class="scroll"><table><thead><tr><th>Date</th><th>Salarié</th><th>Site</th><th class="num">Prévu</th><th class="num">Pointé</th><th class="num">Écart</th><th>Motif</th><th>Niveau 1</th><th></th></tr></thead><tbody>'+list.map(i=>{const df=realMin(i)-plannedMin(i);return '<tr><td>'+dlabel(i.date)+'</td><td>'+esc(fullName(i.emp))+'</td><td>'+esc(i.site)+(i.chantier?' <span class="pill" style="box-shadow:inset 0 0 0 1px #7c5cd6">ponctuel</span>':'')+'</td><td class="num">'+hfr(i.ps)+'–'+hfr(i.pe)+'</td><td class="num">'+hfr(i.rs)+'–'+hfr(i.re)+'</td><td class="num '+(df>0?'over':'')+'">'+(df>0?'+':'')+fmtD(df)+'</td><td>'+esc(i.motif||'—')+'</td><td>'+(EMP[i.emp].role==='chef'?'<span class="small muted">sans objet (chef)</span>':(i.status==='validee_chef'?'<span class="pill st-validee_chef">'+esc(i.chefBy||'chef')+' ✓</span>':'<span class="pill st-ecart">en attente</span>'))+'</td><td><button class="sm pri" data-decide="'+i.id+'">Arbitrer</button></td></tr>';}).join('')+'</tbody></table></div>';
+ h+='</div>';
+ const done=S.ivs.filter(i=>i.status==='validee'&&i.decision||i.status==='refusee').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,15);
+ if(done.length)h+='<div class="card"><h2>Dernières décisions</h2><table><thead><tr><th>Date</th><th>Salarié</th><th>Site</th><th class="num">Extra</th><th>Décision</th><th>Par</th></tr></thead><tbody>'+done.map(i=>'<tr><td>'+dlabel(i.date)+'</td><td>'+esc(fullName(i.emp))+'</td><td>'+esc(i.site)+'</td><td class="num">'+fmtD(extraMin(i))+'</td><td>'+(i.status==='refusee'?'<span class="pill st-refusee">Refusé</span>':i.decision==='payee'?'<span class="pill st-validee">Payé</span>':'<span class="pill st-en_cours">Récupération</span>')+'</td><td>'+esc(i.validBy||'')+'</td></tr>').join('')+'</tbody></table></div>';
+ return h;
+}
+function pointageView(){
+ const days=[...Array(7)].map((_,i)=>addDays(S.week,i));
+ let h=weekNav()+'<div class="card scroll" style="padding:0"><table><thead><tr><th>Salarié</th><th class="num">Contrat</th>'+days.map(d=>'<th class="num">'+dlabel(d)+'</th>').join('')+'<th class="num">Total</th><th class="num">Écart contrat</th><th class="num">Compl. 10 %</th><th class="num">Compl. 25 %</th><th class="num">Supp. 25 %</th><th class="num">Supp. 50 %</th><th class="num">Nuit</th><th class="num">Dim.</th><th class="num">Férié</th><th class="num">En attente</th><th class="num">Récup. (solde)</th></tr></thead><tbody>';
+ EMPS.forEach(e=>{const w=wk(e.id,S.week);const rb=recupBalance(e.id);const lim=plafondMin(e);
+  h+='<tr><td>'+esc(e.nom+' '+e.prenom)+'</td><td class="num">'+dec(w.contract)+'</td>'+w.days.map(x=>'<td class="num">'+(x.abs?'<span class="pill st-absent">'+x.abs+'</span>':(x.m?dec(x.m):(x.pl?(x.d>=TODAY?'<span class="muted" title="prévu, pas encore pointé">('+dec(x.pl)+')</span>':'<span class="over" title="non pointé">0</span>'):'<span class="muted">R</span>')))+'</td>').join('')+
+  '<td class="num"><b>'+dec(w.total)+'</b></td><td class="num '+(w.diff>0?'over':'')+'">'+(w.diff>0?'+':'')+dec(w.diff)+'</td><td class="num">'+(w.c10?dec(w.c10):'')+'</td><td class="num '+(w.c25?'over':'')+'">'+(w.c25?dec(w.c25):'')+'</td><td class="num">'+(w.s25?dec(w.s25):'')+'</td><td class="num">'+(w.s50?dec(w.s50):'')+'</td><td class="num">'+(w.nuit?dec(w.nuit):'')+'</td><td class="num">'+(w.dim?dec(w.dim):'')+'</td><td class="num">'+(w.fer?dec(w.fer):'')+'</td><td class="num">'+(w.pend?'<span class="pill st-ecart">+'+dec(w.pend)+'</span>':'')+'</td><td class="num">'+(rb.bal?dec(rb.bal):'')+'</td></tr>';});
+ h+='</tbody></table></div><div class="small muted">Heures en décimal, comme le tableau actuel. Entre parenthèses : prévu, pas encore pointé. Total = heures pointées et validées ; un extra en attente ou refusé n\'est pas compté. Les heures compl./supp. excluent les extras mis en récupération. Compl. 25 % = au-delà du dixième du contrat (à confirmer avec le cabinet). Nuit = plage '+S.params.nuitDebut+'–'+S.params.nuitFin+'.</div>';
+ return h;
+}
+function monthWeeks(){const d=parseYmd(S.week);const m=d.getMonth(),y=d.getFullYear();return S.genWeeks.filter(w=>{const e=parseYmd(addDays(w,6));return e.getMonth()===m&&e.getFullYear()===y;}).sort();}
+function exportView(){
+ const d=parseYmd(S.week);const mw=monthWeeks();
+ const pendAll=S.ivs.filter(i=>['ecart','validee_chef'].includes(i.status)&&mw.includes(mondayOf(i.date))).length;
+ const missAll=S.ivs.filter(i=>dispStatus(i)==='manquant'&&mw.includes(mondayOf(i.date))).length;
+ const rows=EMPS.map(e=>{const acc={total:0,c10:0,c25:0,s25:0,s50:0,nuit:0,dim:0,fer:0,recup:0};mw.forEach(w=>{const x=wk(e.id,w);Object.keys(acc).forEach(k=>acc[k]+=x[k]);});const abs={};S.abs.filter(a=>a.emp===e.id).forEach(a=>{mw.forEach(w=>{for(let i=0;i<7;i++){const dd=addDays(w,i);if(dd>=a.from&&dd<=a.to)abs[a.code]=(abs[a.code]||0)+1;}});});return {e,acc,abs,rb:recupBalance(e.id)};});
+ let h='<div class="card"><h2>Clôture de '+MOIS[d.getMonth()]+' '+d.getFullYear()+'</h2><div class="sub">Semaines rattachées au mois (selon le jour de fin) : '+(mw.map(w=>dlabel(w)).join(', ')||'aucune générée')+'. Navigue dans Planning pour générer d\'autres semaines.</div>';
+ h+='<div class="alert '+(missAll?'bad':'info')+'"><div><div class="t">'+(missAll?missAll+' intervention(s) non pointée(s)':'Tous les pointages sont faits')+'</div></div></div><div class="alert '+(pendAll?'warn':'info')+'"><div><div class="t">'+(pendAll?pendAll+' écart(s) encore à arbitrer':'Aucun écart en attente')+'</div></div></div>';
+ h+='<div class="row" style="margin:10px 0"><button class="pri" '+(missAll||pendAll?'disabled title="Régulariser d\'abord"':'')+' data-close-month>Clôturer le mois</button><button data-csvdl>Télécharger le récapitulatif (CSV)</button><button data-copycsv>Copier</button>'+(USER.role==='admin'?'<a class="btnlink" href="/api/backup">Télécharger une sauvegarde complète</a>':'')+'</div></div>';
+ h+='<div class="card scroll"><h2>Récapitulatif des éléments variables</h2><div class="sub">Une ligne par salarié — le document que le cabinet de paie devrait saisir.</div><table><thead><tr><th>Salarié</th><th class="num">Heures réalisées</th><th class="num">Compl. 10 %</th><th class="num">Compl. 25 %</th><th class="num">Supp. 25 %</th><th class="num">Supp. 50 %</th><th class="num">Nuit</th><th class="num">Dimanche</th><th class="num">Férié</th><th>Absences (jours)</th><th class="num">Récup. acquise</th></tr></thead><tbody>'+
+ rows.map(r=>'<tr><td>'+esc(r.e.nom+' '+r.e.prenom)+'</td><td class="num">'+dec(r.acc.total)+'</td><td class="num">'+dec(r.acc.c10)+'</td><td class="num">'+dec(r.acc.c25)+'</td><td class="num">'+dec(r.acc.s25)+'</td><td class="num">'+dec(r.acc.s50)+'</td><td class="num">'+dec(r.acc.nuit)+'</td><td class="num">'+dec(r.acc.dim)+'</td><td class="num">'+dec(r.acc.fer)+'</td><td>'+Object.entries(r.abs).map(([k,v])=>k+' '+v).join(', ')+'</td><td class="num">'+dec(r.acc.recup)+'</td></tr>').join('')+'</tbody></table></div>';
+ window.__csv=['Salarié;Heures réalisées;Compl 10%;Compl 25%;Supp 25%;Supp 50%;Nuit;Dimanche;Férié;Absences;Récup acquise'].concat(rows.map(r=>[r.e.nom+' '+r.e.prenom,dec(r.acc.total),dec(r.acc.c10),dec(r.acc.c25),dec(r.acc.s25),dec(r.acc.s50),dec(r.acc.nuit),dec(r.acc.dim),dec(r.acc.fer),Object.entries(r.abs).map(([k,v])=>k+' '+v).join(' '),dec(r.acc.recup)].join(';'))).join('\n');
+ h+='<div class="card"><h2>Aperçu CSV</h2><textarea rows="8" readonly>'+esc(window.__csv)+'</textarea></div>';
+ return h;
+}
+function journalView(){return '<div class="card"><h2>Journal des modifications</h2><div class="sub">Toute saisie ou modification d\'heures est tracée : qui, quand, quoi.</div>'+(S.log.length?'<table><thead><tr><th>Quand</th><th>Qui</th><th>Action</th></tr></thead><tbody>'+S.log.slice().sort((a,b)=>String(b.id).localeCompare(String(a.id))).slice(0,300).map(l=>'<tr><td class="small">'+esc(l.at)+'</td><td>'+esc(l.by)+'</td><td>'+esc(l.txt)+'</td></tr>').join('')+'</tbody></table>':'<div class="muted">Aucune action pour l\'instant. Pointe ou arbitre quelque chose pour voir le journal se remplir.</div>')+'</div>';}
+function paramsView(){const p=S.params;return '<div class="card" style="max-width:560px"><h2>Paramètres de calcul</h2><div class="sub">Valeurs de départ, à confirmer avec le cabinet de paie et la CCN Propreté.</div><form id="paramsForm"><label class="small muted">Tolérance avant écart (minutes)</label><input type="number" name="tol" min="0" max="120" value="'+p.tol+'"><label class="small muted" style="display:block;margin-top:10px">Plafond des heures complémentaires (temps partiel)</label><select name="plafond">'+opts([['1/10','1/10 du contrat (par défaut)'],['1/3','1/3 du contrat (si accord de branche)']],p.plafond)+'</select><div class="row" style="margin-top:10px"><div><label class="small muted">Début plage de nuit</label><br><input type="time" name="nuitDebut" value="'+p.nuitDebut+'"></div><div><label class="small muted">Fin plage de nuit</label><br><input type="time" name="nuitFin" value="'+p.nuitFin+'"></div></div><label class="small muted" style="display:block;margin-top:10px">Semaine A (horaires alternés)</label><select name="semA">'+opts([['impaire','Semaines ISO impaires'],['paire','Semaines ISO paires']],p.semA||'impaire')+'</select><div class="small muted">Cette semaine (n° '+isoWeek(W0)+') est une semaine '+weekAB(W0)+'.</div><div style="margin-top:14px"><button class="pri" type="submit">Enregistrer</button></div></form></div>';}
+
+/* --- Vue téléphone (salarié / chef) --- */
+function ivCard(i,mine){
+ const st=dispStatus(i);let b='';
+ if(mine&&st!=='absent'&&i.date<=TODAY&&i.date>=addDays(TODAY,-7)){
+  if(i.status==='prevue')b='<div class="btns"><button class="pri" data-act="arrive" data-id="'+i.id+'">Arrivé</button><button class="ok" data-act="asplanned" data-id="'+i.id+'">Fait comme prévu</button><button class="full" data-ecart="'+i.id+'">Horaires différents…</button></div>';
+  else if(i.status==='en_cours')b='<div class="btns"><button class="pri full" data-act="parti" data-id="'+i.id+'">Parti</button><button class="full" data-ecart="'+i.id+'">Horaires différents…</button></div>';
+  else if(i.status==='validee'&&!i.decision&&!i.validBy)b='<div class="btns"><button class="full" data-ecart="'+i.id+'">Corriger mes horaires</button></div>';
+ }
+ return '<div class="iv"><div class="row" style="justify-content:space-between"><div class="site">'+esc(i.site)+'</div><span class="pill st-'+st+'">'+ST_LABEL[st]+'</span></div><div class="hours">'+hfr(i.ps)+' – '+hfr(i.pe)+(i.rs?'<br><span class="small">Pointé : '+hfr(i.rs)+(i.re?' – '+hfr(i.re):'')+'</span>':'')+(i.chantier?'<br><span class="small" style="color:#7c5cd6">Chantier ponctuel</span>':'')+'</div>'+b+'</div>';
+}
+function phoneView(){
+ const me=S.who,e=EMP[me];const chef=S.role==='chef';
+ const tabs=chef?[['today','Ma journée'],['team','Mon équipe'],['week','Ma semaine'],['month','Mon mois']]:[['today','Aujourd\'hui'],['week','Ma semaine'],['month','Mon mois']];
+ if(!tabs.find(t=>t[0]===S.ptab))S.ptab='today';
+ let h='<div class="phone"><div class="brand"><img src="/icon.png" alt=""></div><h1>Bonjour '+esc(e.prenom)+'</h1><div class="who">'+(chef?'Chef d\'équipe · ':'')+contractLabel(me,mondayOf(S.day))+'</div><div class="ptabs">'+tabs.map(t=>'<button data-ptab="'+t[0]+'" class="'+(S.ptab===t[0]?'on':'')+'">'+t[1]+'</button>').join('')+'</div>';
+ const dayNav='<div class="daynav"><button data-day="-1">◀</button><b>'+dlong(S.day)+(S.day===TODAY?' (aujourd\'hui)':'')+'</b><button data-day="1">▶</button></div>';
+ if(S.ptab==='today'){
+  ensureWeek(S.day);
+  const ab=absOf(me,S.day);const ivs=S.ivs.filter(i=>i.emp===me&&i.date===S.day).sort((a,b)=>a.ps.localeCompare(b.ps));
+  h+=dayNav;
+  if(ab)h+='<div class="iv"><div class="site">'+esc(ABS_CODES[ab])+'</div><div class="hours">Pas d\'intervention ce jour</div></div>';
+  else if(!ivs.length)h+='<div class="iv"><div class="site">Repos</div><div class="hours">Aucune intervention prévue</div></div>';
+  else h+=ivs.map(i=>ivCard(i,true)).join('');
+  if(chef)h+='<div class="small muted">Tes propres écarts sont validés directement par Gérome ou Marthe, jamais par toi.</div>';
+ }
+ if(S.ptab==='team'){
+  ensureWeek(S.day);
+  const team=EMPS.filter(x=>x.chef===me);
+  h+=dayNav;
+  const ivs=S.ivs.filter(i=>team.some(t=>t.id===i.emp)&&i.date===S.day).sort((a,b)=>a.ps.localeCompare(b.ps));
+  const pend=ivs.filter(i=>i.status==='ecart');
+  if(pend.length)h+='<div class="alert warn"><div class="t">'+pend.length+' écart(s) à valider</div></div>';
+  if(!ivs.length)h+='<div class="muted">Personne de ton équipe n\'est planifié ce jour.</div>';
+  ivs.forEach(i=>{const st=dispStatus(i);h+='<div class="iv"><div class="row" style="justify-content:space-between"><div><b>'+esc(fullName(i.emp))+'</b><div class="small muted">'+esc(i.site)+' · '+hfr(i.ps)+'–'+hfr(i.pe)+'</div>'+(i.rs?'<div class="small">Pointé '+hfr(i.rs)+(i.re?'–'+hfr(i.re):'')+'</div>':'')+(i.motif?'<div class="small muted">'+esc(i.motif)+'</div>':'')+'</div><span class="pill st-'+st+'">'+ST_LABEL[st]+'</span></div>'+(i.status==='ecart'&&canValidateChef(i)?'<div class="btns" style="margin-top:10px"><button class="ok full" data-act="chefok" data-id="'+i.id+'">Je confirme l\'écart</button></div>':'')+'</div>';});
+ }
+ if(S.ptab==='week'){
+  const w=mondayOf(S.day);ensureWeek(w);
+  h+='<div class="daynav"><button data-day="-7">◀</button><b>Semaine du '+dlabel(w)+'</b><button data-day="7">▶</button></div>';
+  for(let k=0;k<7;k++){const d=addDays(w,k);const ab=absOf(me,d);const ivs=S.ivs.filter(i=>i.emp===me&&i.date===d).sort((a,b)=>a.ps.localeCompare(b.ps));
+   h+='<div style="padding:8px 0;border-bottom:1px solid var(--line)"><b>'+dlong(d)+'</b>'+(isFer(d)?' <span class="pill" style="background:#fff9db">férié</span>':'')+'<div class="small muted">'+(ab?ABS_CODES[ab]:(ivs.length?ivs.map(i=>esc(i.site)+' '+hfr(i.ps)+'–'+hfr(i.pe)).join('<br>'):'Repos'))+'</div></div>';}
+ }
+ if(S.ptab==='month'){
+  const w=mondayOf(S.day);ensureWeek(w);const x=wk(me,w);const rb=recupBalance(me);
+  h+='<div class="iv"><div class="small muted">Semaine du '+dlabel(w)+'</div><div class="big">'+fmtD(x.total)+'</div><div class="muted">réalisées et validées · contrat '+fmtD(x.contract)+'</div>'+(x.pend?'<div class="small" style="margin-top:6px;color:var(--warn)">+'+fmtD(x.pend)+' en attente de validation</div>':'')+'</div>';
+  h+='<div class="iv"><div class="small muted">Compteur de récupération</div><div class="big">'+fmtD(rb.bal)+'</div><div class="muted small">acquis '+fmtD(rb.acq)+' · pris '+fmtD(rb.taken)+'</div></div>';
+ }
+ return h+'</div>';
+}
+function ensureWeek(d){const w=mondayOf(d);if(!S.genWeeks.includes(w)){genWeek(w);save();}}
+
+/* ====== Événements ====== */
+document.addEventListener('click',ev=>{
+ const t=ev.target.closest('[data-tab],[data-wk],[data-editiv],[data-addiv],[data-absadd],[data-delabs],[data-decide],[data-act],[data-ecart],[data-ptab],[data-day],[data-copycsv],[data-close-month],[data-pmode],[data-orient],[data-detail],[data-pnav],[data-pvreset],[data-gocell],[data-editct],[data-addcontrat],[data-editcontrat],[data-addponct],[data-addslot],[data-addtype],[data-edittype],#resetBtn,#logoutBtn,#pwdBtn,[data-empedit],[data-code],[data-gest],[data-csvdl]');
+ if(!t||t.closest('.modal-bg'))return;
+ if(t.id==='logoutBtn'){api('/api/logout',{}).finally(()=>location.reload());return;}
+ if(t.id==='pwdBtn'){pwdModal();return;}
+ if(t.dataset.empedit!==undefined){empModal(t.dataset.empedit||null);return;}
+ if(t.dataset.code){codeModal(t.dataset.code);return;}
+ if(t.dataset.gest!==undefined){gestModal(t.dataset.gest||null);return;}
+ if(t.dataset.csvdl!==undefined){const b=new Blob(['\ufeff'+window.__csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='socanet-elements-variables-'+S.week.slice(0,7)+'.csv';document.body.appendChild(a);a.click();a.remove();return;}
+ if(t.dataset.tab){S.tab=t.dataset.tab;saveUi();if(t.dataset.tab==='contrats'&&USER.role==='admin')loadUsers().then(()=>safeRender());render();return;}
+ if(t.dataset.editct){contractModal(t.dataset.editct);return;}
+ if(t.dataset.addcontrat!==undefined){contratModal();return;}
+ if(t.dataset.editcontrat){contratModal(t.dataset.editcontrat);return;}
+ if(t.dataset.addponct!==undefined){ponctModal();return;}
+ if(t.dataset.addslot){slotModal(t.dataset.addslot);return;}
+ if(t.dataset.addtype!==undefined){typeModal(null,t.dataset.addtype);return;}
+ if(t.dataset.edittype){typeModal(t.dataset.edittype);return;}
+ if(t.dataset.detail){pvState().detail=t.dataset.detail;save();render();return;}
+ if(t.dataset.orient){pvState().orient=t.dataset.orient;save();render();return;}
+ if(t.dataset.pmode){pvState().mode=t.dataset.pmode;if(t.dataset.pmode!=='week')S.pmonth=monthStart(S.week);save();render();return;}
+ if(t.dataset.pnav!==undefined){const n=+t.dataset.pnav;S.pmonth=n===0?monthStart(TODAY):addMonths(S.pmonth,n);save();render();return;}
+ if(t.dataset.pvreset!==undefined){Object.assign(pvState(),{emp:'all',team:'all',site:'all'});save();render();return;}
+ if(t.dataset.gocell&&(pvState().mode==='week'||pvState().emp!=='all')){const [e,d]=t.dataset.gocell.split('|');dayModal(e,d);return;}
+ if(t.dataset.gocell){const [e,d]=t.dataset.gocell.split('|');Object.assign(pvState(),{mode:'week',emp:e});S.week=mondayOf(d);save();render();return;}
+ if(t.dataset.wk!==undefined){const n=+t.dataset.wk;S.week=n===0?W0:addDays(S.week,n);genWeek(S.week);save();render();return;}
+ if(t.dataset.editiv){ivModal(t.dataset.editiv);return;}
+ if(t.dataset.addiv){const [e,d]=t.dataset.addiv.split('|');ivModal(null,e,d);return;}
+ if(t.dataset.absadd!==undefined){absModal();return;}
+ if(t.dataset.delabs){S.abs=S.abs.filter(a=>a.id!==t.dataset.delabs);logA('Absence supprimée');save();render();return;}
+ if(t.dataset.decide){decideModal(t.dataset.decide);return;}
+ if(t.dataset.act){act(t.dataset.act,t.dataset.id);return;}
+ if(t.dataset.ecart){ecartModal(t.dataset.ecart);return;}
+ if(t.dataset.ptab){S.ptab=t.dataset.ptab;save();render();return;}
+ if(t.dataset.day){const n=+t.dataset.day;S.day=addDays(S.day,n);save();render();return;}
+ if(t.dataset.copycsv!==undefined){try{navigator.clipboard.writeText(window.__csv).then(()=>toast('Récapitulatif copié'),()=>toast('Copie refusée : sélectionne le texte de l\'aperçu'));}catch(e){toast('Copie refusée : sélectionne le texte de l\'aperçu');}return;}
+ if(t.dataset.closeMonth!==undefined){logA('Mois clôturé (simulation)');save();toast('Mois clôturé (simulation) : exports générés et mois verrouillé');render();return;}
+});
+document.addEventListener('change',ev=>{if(ev.target.id==='tyEmp'){S.tyEmp=ev.target.value;save();render();return;}const pm={pvEmp:'emp',pvTeam:'team',pvSite:'site'}[ev.target.id];if(pm){pvState()[pm]=ev.target.value;save();render();return;}if(ev.target.id==='roleSel'){const [r,w]=ev.target.value.split('|');S.role=r;S.who=w;S.ptab='today';S.day=TODAY;save();render();}});
+document.addEventListener('submit',ev=>{if(ev.target.id==='paramsForm'){ev.preventDefault();const f=Object.fromEntries(new FormData(ev.target).entries());const oldA=S.params.semA;S.params={tol:Math.max(0,+f.tol||0),plafond:f.plafond,nuitDebut:f.nuitDebut,nuitFin:f.nuitFin,semA:f.semA};if(oldA!==f.semA)regenFuture();logA('Paramètres modifiés');save();render();toast('Paramètres enregistrés');}});
+
+/* ====== Serveur : synchronisation, comptes ====== */
+let USER=null,VERSION=0,SNAP={},syncing=false,pendingSync=false,rerenderPending=false,USERS=null,SYNC_STATE='ok';
+const COLLS=['ivs','abs','types','contrats','chantiers','emps','contracts','params','log','weeks'];
+const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const isMgrUser=()=>USER&&(USER.role==='admin'||USER.role==='gest');
+const PARAMS_DEF={tol:15,plafond:'1/10',nuitDebut:'21:00',nuitFin:'06:00',semA:'impaire',goLive:'2000-01-01'};
+async function api(url,body,method){const r=await fetch(url,{method:method||(body!==undefined?'POST':'GET'),credentials:'same-origin',headers:body!==undefined?{'Content-Type':'application/json'}:{},body:body!==undefined?JSON.stringify(body):undefined});let j={};try{j=await r.json();}catch(e){}if(!r.ok){const e=new Error(j.error||('Erreur '+r.status));e.status=r.status;throw e;}return j;}
+function docsOf(c){switch(c){case 'contracts':return Object.entries(S.contracts||{}).map(([id,v])=>Object.assign({id},v));case 'params':return [Object.assign({id:'p'},S.params)];case 'weeks':return (S.genWeeks||[]).map(w=>({id:w}));default:return S[c]||[];}}
+function setColl(c,arr){switch(c){case 'contracts':S.contracts=Object.fromEntries(arr.map(d=>{const v=Object.assign({},d);delete v.id;return [d.id,v];}));break;case 'params':{const p=Object.assign({},PARAMS_DEF,arr.find(d=>d.id==='p')||{});delete p.id;S.params=p;break;}case 'weeks':S.genWeeks=arr.map(d=>d.id);break;default:S[c]=arr;}}
+function computeChanges(){const ch={};let n=0;COLLS.forEach(c=>{if(!isMgrUser()&&!['ivs','log'].includes(c))return;const snap=SNAP[c]||{};const cur={};docsOf(c).forEach(d=>{cur[d.id]=JSON.stringify(d);});const up=[],del=[];for(const id in cur)if(cur[id]!==snap[id])up.push(JSON.parse(cur[id]));if(isMgrUser())for(const id in snap)if(!(id in cur))del.push(id);if(up.length||del.length){ch[c]={up,del};n+=up.length+del.length;}});return n?ch:null;}
+function applyDelta(r){
+ if(r.full){COLLS.forEach(c=>{const arr=r.up[c]||[];SNAP[c]={};arr.forEach(d=>SNAP[c][d.id]=JSON.stringify(d));setColl(c,arr);});}
+ else COLLS.forEach(c=>{const ups=r.up[c]||[],dels=r.del[c]||[];if(!ups.length&&!dels.length)return;const m=new Map(docsOf(c).map(d=>[d.id,d]));SNAP[c]=SNAP[c]||{};ups.forEach(d=>{m.set(d.id,d);SNAP[c][d.id]=JSON.stringify(d);});dels.forEach(id=>{m.delete(id);delete SNAP[c][id];});setColl(c,[...m.values()]);});
+ VERSION=r.version;refreshEmps();
+}
+const UIKEYS=['tab','week','ptab','pv','pmonth','tyEmp','role','who'];
+function saveUi(){try{localStorage.setItem('socanet-ui-'+USER.login,JSON.stringify(Object.fromEntries(UIKEYS.map(k=>[k,S[k]]))));}catch(e){}}
+let syncTimer=null;
+function save(){if(!USER)return;saveUi();clearTimeout(syncTimer);syncTimer=setTimeout(doSync,300);}
+function setSync(s){SYNC_STATE=s;const el=document.getElementById('syncState');if(el){el.className='sync s-'+s;el.textContent=s==='ok'?'● Enregistré':s==='run'?'● Enregistrement…':'● Hors ligne : en attente';}}
+async function fullReload(){const r=await api('/api/state?since=0');applyDelta(r);render();}
+async function doSync(){
+ if(syncing){pendingSync=true;return;}
+ const ch=computeChanges();if(!ch){setSync('ok');return;}
+ syncing=true;setSync('run');
+ try{const r=await api('/api/sync',{since:VERSION,changes:ch});applyDelta(r);setSync('ok');}
+ catch(e){if(e.status===401){location.reload();return;}if(e.status&&e.status<500){toast(e.message);try{await fullReload();}catch(x){}setSync('ok');}else setSync('err');}
+ finally{syncing=false;}
+ if(pendingSync){pendingSync=false;doSync();}else safeRender();
+}
+async function poll(){
+ if(syncing||!USER)return;
+ if(computeChanges()){doSync();return;}
+ try{const r=await api('/api/state?since='+VERSION);const any=Object.keys(r.up).length||Object.keys(r.del).length;if(any){applyDelta(r);safeRender();}else VERSION=Math.max(VERSION,r.version);if(SYNC_STATE==='err')setSync('ok');}
+ catch(e){if(e.status===401)location.reload();else setSync('err');}
+}
+function safeRender(){if(modalEl){rerenderPending=true;return;}const y=window.scrollY;render();window.scrollTo(0,y);}
+async function loadUsers(){try{USERS=await api('/api/users');}catch(e){USERS=[];}}
+const slug=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+function userOfEmp(id){return (USERS||[]).find(u=>u.emp===id&&u.active);}
+function codeModal(id){const e=EMP[id];const u=userOfEmp(id);const login=u?u.login:(slug(e.prenom)+'.'+slug(e.nom).slice(0,1));
+ modal('<h3>Accès de '+esc(fullName(id))+'</h3><div class="small muted">Le salarié se connecte avec cet identifiant et un code à 6 chiffres. Générer un nouveau code annule l\'ancien et déconnecte ses appareils.</div><label>Identifiant</label><input name="login" required value="'+esc(login)+'" pattern="[a-z0-9._-]{3,40}"><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">'+(u&&u.hasCode?'Générer un nouveau code':'Créer l\'accès')+'</button></div>',
+ f=>{api('/api/users',{login:f.login.trim().toLowerCase(),role:e.role==='chef'?'chef':'sal',emp:id,name:fullName(id),newCode:true}).then(r=>{logA('Code d\'accès généré pour '+fullName(id));save();loadUsers().then(()=>{modal('<h3>Code de '+esc(fullName(id))+'</h3><div style="font-size:15px;line-height:1.8">Adresse : <b>'+esc(location.host)+'</b><br>Identifiant : <b>'+esc(r.login)+'</b><br>Code : <b style="font-size:26px;letter-spacing:4px">'+esc(r.code)+'</b></div><div class="small muted" style="margin-top:8px">Note-le et remets-le en main propre : il ne sera plus affiché.</div><div class="acts"><button type="button" class="pri" data-close>C\'est noté</button></div>',()=>{});});}).catch(err=>toast(err.message));});}
+function gestModal(login){const u=login?(USERS||[]).find(x=>x.login===login):null;
+ modal('<h3>'+(u?'Compte gestionnaire':'Nouveau compte gestionnaire')+'</h3><label>Identifiant</label><input name="login" required value="'+esc(u?u.login:'marthe')+'" '+(u?'readonly':'')+'><label>Nom affiché</label><input name="name" required value="'+esc(u?u.name:'Marthe')+'"><label>Mot de passe '+(u?'(laisser vide pour ne pas changer)':'')+'</label><input type="password" name="password" minlength="10" '+(u?'':'required')+' autocomplete="new-password"><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" name="active" style="width:auto" '+(!u||u.active?'checked':'')+'> Compte actif</label><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">Enregistrer</button></div>',
+ f=>{api('/api/users',{login:f.login.trim().toLowerCase(),name:f.name,role:'gest',password:f.password||undefined,active:!!f.active}).then(()=>{toast('Compte enregistré');loadUsers().then(()=>{closeModal();render();});}).catch(err=>toast(err.message));return false;});}
+function pwdModal(){modal('<h3>Changer mon mot de passe</h3><label>Mot de passe actuel</label><input type="password" name="old" required autocomplete="current-password"><label>Nouveau mot de passe (10 caractères minimum)</label><input type="password" name="password" minlength="10" required autocomplete="new-password"><label>Confirmer</label><input type="password" name="password2" required autocomplete="new-password"><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">Enregistrer</button></div>',
+ f=>{if(f.password!==f.password2){toast('Les deux mots de passe sont différents');return false;}api('/api/password',{old:f.old,password:f.password}).then(()=>{toast('Mot de passe modifié');closeModal();}).catch(e=>toast(e.message));return false;});}
+function empModal(id){const e=id?EMP[id]:null;const c=id?CT(id):{type:'CDI',alt:false,hA:20,hB:20};const chefs=(S.emps||[]).filter(x=>x.role==='chef'&&x.actif!==false&&x.id!==id);
+ modal('<h3>'+(e?'Fiche — '+esc(fullName(id)):'Nouveau salarié')+'</h3><div class="row"><div style="flex:1"><label>Prénom</label><input name="prenom" required value="'+esc(e?e.prenom:'')+'"></div><div style="flex:1"><label>Nom</label><input name="nom" required value="'+esc(e?e.nom:'')+'"></div></div><div class="row"><div style="flex:1"><label>Fonction</label><select name="role">'+opts([['sal','Salarié'],['chef','Chef d\'équipe']],e&&e.role==='chef'?'chef':'sal')+'</select></div><div style="flex:1"><label>Chef d\'équipe</label><select name="chef">'+opts([['','—']].concat(chefs.map(x=>[x.id,x.prenom+' '+x.nom])),e?e.chef||'':'')+'</select></div></div>'+
+ '<div class="row"><div style="flex:1"><label>Contrat</label><select name="type">'+opts(['CDI','CDD'],c.type)+'</select></div><div style="flex:1"><label>Heures / semaine (ou semaine A)</label><input type="number" step="0.25" min="0" max="48" name="hA" required value="'+c.hA+'"></div></div><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" name="alt" style="width:auto" '+(c.alt?'checked':'')+' onchange="this.form.hB.disabled=!this.checked"> Horaire différent en semaine A et semaine B</label><label>Heures en semaine B</label><input type="number" step="0.25" min="0" max="48" name="hB" value="'+c.hB+'" '+(c.alt?'':'disabled')+'>'+
+ (e?'<label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" name="actif" style="width:auto" '+(e.actif!==false?'checked':'')+'> Salarié présent dans l\'entreprise (décocher à la sortie)</label>':'')+'<div class="small muted" style="margin-top:8px">Un changement de forfait doit correspondre à un avenant signé.</div><div class="acts"><button type="button" data-close>Annuler</button><button class="pri" type="submit">Enregistrer</button></div>',
+ f=>{let eid=id;if(!e){eid=slug(f.prenom)+'-'+slug(f.nom);while((S.emps||[]).some(x=>x.id===eid))eid+='2';S.emps.push({id:eid});}
+  const o=(S.emps.find(x=>x.id===eid));Object.assign(o,{nom:f.nom.trim().toUpperCase(),prenom:f.prenom.trim(),role:f.role==='chef'?'chef':undefined,chef:f.chef||undefined,actif:e?!!f.actif:true,type:f.type});if(o.role!=='chef')delete o.role;if(!o.chef)delete o.chef;
+  S.contracts[eid]={type:f.type,alt:!!f.alt,hA:Math.max(0,+f.hA||0),hB:f.alt?Math.max(0,+f.hB||0):Math.max(0,+f.hA||0)};refreshEmps();
+  logA((e?'Fiche modifiée : ':'Salarié ajouté : ')+fullName(eid)+' · '+contractLabel(eid));toast('Enregistré');});}
+function loginView(){app.innerHTML='<div class="login"><img src="/logo.png" alt="Socanet Services"><h1>Planning & pointage</h1><form id="loginForm"><label>Identifiant</label><input name="login" autocomplete="username" autocapitalize="none" required><label>Code</label><input name="code" type="password" autocomplete="current-password" required><button class="pri" type="submit">Se connecter</button><div class="small muted" id="loginErr"></div></form></div>';
+ document.getElementById('loginForm').addEventListener('submit',async ev=>{ev.preventDefault();const f=Object.fromEntries(new FormData(ev.target).entries());try{await api('/api/login',{login:f.login,code:f.code});location.reload();}catch(e){document.getElementById('loginErr').textContent=e.message;}});}
+function setupView(){app.innerHTML='<div class="login"><img src="/logo.png" alt="Socanet Services"><h1>Installation</h1><div class="small muted">Crée le compte administrateur. Le code d\'installation t\'a été transmis lors de la mise en ligne.</div><form id="setupForm"><label>Code d\'installation</label><input name="token" required><label>Identifiant administrateur</label><input name="login" value="gerome" required><label>Nom</label><input name="name" value="Gérome" required><label>Mot de passe (10 caractères minimum)</label><input name="password" type="password" minlength="10" required autocomplete="new-password"><label>Confirmer</label><input name="password2" type="password" required autocomplete="new-password"><button class="pri" type="submit">Créer le compte</button><div class="small muted" id="loginErr"></div></form></div>';
+ document.getElementById('setupForm').addEventListener('submit',async ev=>{ev.preventDefault();const f=Object.fromEntries(new FormData(ev.target).entries());if(f.password!==f.password2){document.getElementById('loginErr').textContent='Les deux mots de passe sont différents';return;}try{await api('/api/setup',f);location.reload();}catch(e){document.getElementById('loginErr').textContent=e.message;}});}
+async function boot(){
+ let me;try{me=await api('/api/me');}catch(e){app.innerHTML='<div class="login"><h1>Serveur injoignable</h1><div class="muted">Vérifie ta connexion puis recharge la page.</div></div>';return;}
+ if(me.setup)return setupView();
+ if(!me.user)return loginView();
+ USER=me.user;
+ S={ivs:[],abs:[],types:[],contrats:[],chantiers:[],emps:[],contracts:{},params:Object.assign({},PARAMS_DEF),log:[],genWeeks:[],tab:'dash',week:W0,ptab:'today'};
+ let ui={};try{ui=JSON.parse(localStorage.getItem('socanet-ui-'+USER.login)||'{}');}catch(e){}
+ UIKEYS.forEach(k=>{if(ui[k]!==undefined)S[k]=ui[k];});
+ S.day=TODAY;if(!S.week||S.week<addDays(W0,-56))S.week=W0;
+ if(USER.role==='admin'){if(!ui.role){S.role='admin';S.who=USER.login;}}else{S.role=USER.role;S.who=USER.emp||USER.login;}
+ await fullReload();
+ if(isMgrUser()){for(let k=0;k<5;k++)genWeek(addDays(W0,7*k));save();}
+ if(USER.role==='admin')loadUsers().then(()=>{if(S.tab==='contrats')safeRender();});
+ setInterval(poll,20000);
+ setInterval(()=>{if(ymd(new Date())!==TODAY)location.reload();},60000);
+}
+
+/* ====== Démarrage ====== */
+boot();
+</script>
+</body>
+</html>
